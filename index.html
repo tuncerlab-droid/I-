@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuncerLab Shop | Official</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+        :root {
+            --accent: #00f2ff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #050505;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .heading-font { font-family: 'Syncopate', sans-serif; }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+        }
+
+        .view-section {
+            display: none;
+            opacity: 0;
+            transform: scale(0.98);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .view-section.active {
+            display: block;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .product-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.15);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-hazirlaniyor { background: #ca8a04; color: #fff; }
+        .status-teslim { background: #16a34a; color: #fff; }
+        .status-iptal { background: #dc2626; color: #fff; }
+
+        input, textarea, select {
+            background: #111 !important;
+            border: 1px solid #333 !important;
+            padding: 12px !important;
+            border-radius: 10px !important;
+            width: 100%;
+            color: white !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigasyon -->
+    <nav class="p-6 flex justify-between items-center max-w-7xl mx-auto">
+        <div class="heading-font font-bold text-2xl tracking-tighter cursor-pointer" onclick="showView('shop')">
+            TUNCERLAB<span class="text-cyan-400">.</span>
+        </div>
+        <div class="flex items-center space-x-6 font-semibold text-sm">
+            <button onclick="showView('shop')" class="hover:text-cyan-400">MAĞAZA</button>
+            <button onclick="showView('track')" class="hover:text-cyan-400">TAKİP</button>
+            <button onclick="showView('cart')" class="relative">
+                SEPET (<span id="cart-count">0</span>)
+            </button>
+            <button onclick="promptAdmin()" class="text-red-500">ADMIN</button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6">
+
+        <!-- MAĞAZA -->
+        <section id="view-shop" class="view-section active">
+            <div class="flex space-x-4 mb-10 overflow-x-auto pb-2">
+                <button onclick="filter('tümü')" class="glass px-6 py-2 whitespace-nowrap hover:bg-white/10">Tümü</button>
+                <button onclick="filter('savunma')" class="glass px-6 py-2 whitespace-nowrap hover:bg-white/10">Savunma</button>
+                <button onclick="filter('starwars')" class="glass px-6 py-2 whitespace-nowrap hover:bg-white/10">Star Wars</button>
+                <button onclick="filter('teknoloji')" class="glass px-6 py-2 whitespace-nowrap hover:bg-white/10">Teknoloji</button>
+            </div>
+            <div id="grid-products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </section>
+
+        <!-- SEPET & CHECKOUT -->
+        <section id="view-cart" class="view-section">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div class="lg:col-span-2 space-y-4" id="cart-list"></div>
+                <div class="glass p-8 h-fit">
+                    <h2 class="heading-font text-xl mb-6">Sipariş Bilgileri</h2>
+                    <form onsubmit="placeOrder(event)" class="space-y-4">
+                        <input type="text" id="order-name" placeholder="Ad Soyad" required>
+                        <input type="email" id="order-email" placeholder="Gmail Adresi" required>
+                        <div class="flex space-x-2">
+                            <input type="text" id="order-il" placeholder="İl" required>
+                            <input type="text" id="order-ilce" placeholder="İlçe" required>
+                        </div>
+                        <textarea id="order-address" placeholder="Tam Adres" required></textarea>
+                        <div class="p-4 bg-cyan-400/10 border border-cyan-400/20 rounded-lg text-xs text-cyan-200">
+                            ÖDEME: KAPIDA ÖDEME (NAKİT/KART)
+                        </div>
+                        <button class="w-full bg-cyan-500 text-black font-bold p-4 rounded-xl hover:bg-cyan-400 transition">SİPARİŞİ ONAYLA</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAKİP SORGULAMA -->
+        <section id="view-track" class="view-section">
+            <div class="max-w-xl mx-auto text-center">
+                <h2 class="heading-font text-3xl mb-4">SİPARİŞ TAKİBİ</h2>
+                <div class="flex space-x-2 mb-10">
+                    <input type="email" id="track-email-input" placeholder="Sipariş Gmail adresinizi girin">
+                    <button onclick="track()" class="bg-white text-black font-bold px-6 rounded-xl">SORGULA</button>
+                </div>
+                <div id="track-results" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <!-- ADMIN PANEL -->
+        <section id="view-admin" class="view-section">
+            <div class="flex justify-between items-end mb-8">
+                <h2 class="heading-font text-3xl">YÖNETİM PANELİ</h2>
+                <div class="flex space-x-4">
+                    <button onclick="showAdminView('orders')" class="text-sm font-bold border-b-2 border-cyan-400">Siparişler</button>
+                    <button onclick="showAdminView('stock')" class="text-sm font-bold opacity-50">Stok Yönetimi</button>
+                </div>
+            </div>
+
+            <div id="admin-orders" class="glass overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-white/5 text-xs">
+                        <tr>
+                            <th class="p-4">ID / TARİH</th>
+                            <th class="p-4">MÜŞTERİ</th>
+                            <th class="p-4">ADRES</th>
+                            <th class="p-4">DURUM</th>
+                            <th class="p-4">İŞLEM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-order-rows"></tbody>
+                </table>
+            </div>
+
+            <div id="admin-stock" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+    </main>
+
+    <script>
+        const API = "http://localhost:3000/api";
+        const ADMIN_PASS = "175017";
+        let products = [];
+        let cart = [];
+
+        async function init() {
+            try {
+                const res = await fetch(`${API}/products`);
+                products = await res.json();
+                renderProducts(products);
+            } catch(e) { console.error("Sunucu bağlantı hatası"); }
+        }
+
+        function showView(view) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('view-' + view).classList.add('active');
+            if(view === 'admin') loadAdminOrders();
+        }
+
+        function renderProducts(list) {
+            const grid = document.getElementById('grid-products');
+            grid.innerHTML = '';
+            list.forEach(p => {
+                grid.innerHTML += `
+                    <div class="glass p-4 product-card flex flex-col transition-all">
+                        <img src="${p.image}" class="w-full h-44 object-cover rounded-xl mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-sm">${p.name}</h3>
+                            <span class="text-xs text-cyan-400">${p.stock} Adet</span>
+                        </div>
+                        <p class="text-lg font-black mb-4">${p.price.toLocaleString()} TL</p>
+                        <button onclick="addToCart(${p.id})" ${p.stock <= 0 ? 'disabled' : ''} 
+                            class="mt-auto w-full p-2 rounded-lg text-xs font-bold ${p.stock > 0 ? 'bg-white text-black' : 'bg-red-900/20 text-red-500'}">
+                            ${p.stock > 0 ? 'SEPETE EKLE' : 'STOKTA YOK'}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function filter(cat) {
+            if(cat === 'tümü') renderProducts(products);
+            else renderProducts(products.filter(p => p.category === cat));
+        }
+
+        function addToCart(id) {
+            const p = products.find(x => x.id === id);
+            cart.push(p);
+            updateCart();
+            alert(p.name + " sepete eklendi.");
+        }
+
+        function updateCart() {
+            document.getElementById('cart-count').innerText = cart.length;
+            const list = document.getElementById('cart-list');
+            list.innerHTML = cart.length === 0 ? '<div class="glass p-20 text-center">Sepetiniz boş.</div>' : '';
+            cart.forEach((item, idx) => {
+                list.innerHTML += `
+                    <div class="glass p-4 flex justify-between items-center">
+                        <div class="flex items-center space-x-4">
+                            <img src="${item.image}" class="w-12 h-12 rounded-lg object-cover">
+                            <div><p class="font-bold">${item.name}</p><p class="text-xs text-gray-400">${item.price} TL</p></div>
+                        </div>
+                        <button onclick="cart.splice(${idx},1);updateCart();" class="text-red-500 text-xs">KALDIR</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function placeOrder(e) {
+            e.preventDefault();
+            if(cart.length === 0) return alert("Sepetiniz boş.");
+            
+            const data = {
+                name: document.getElementById('order-name').value,
+                email: document.getElementById('order-email').value,
+                city: document.getElementById('order-il').value,
+                district: document.getElementById('order-ilce').value,
+                address: document.getElementById('order-address').value,
+                items: cart,
+                total: cart.reduce((a,b) => a + b.price, 0)
+            };
+
+            const res = await fetch(`${API}/orders`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+
+            if(res.ok) {
+                const resData = await res.json();
+                alert("SİPARİŞ ALINDI! Takip Kodunuz: " + resData.orderId);
+                cart = [];
+                updateCart();
+                init(); // Stokları tazele
+                showView('shop');
+            }
+        }
+
+        async function track() {
+            const email = document.getElementById('track-email-input').value;
+            const res = await fetch(`${API}/orders/track/${email}`);
+            const userOrders = await res.json();
+            const resDiv = document.getElementById('track-results');
+            resDiv.innerHTML = userOrders.length === 0 ? '<p>Sipariş bulunamadı.</p>' : '';
+            userOrders.forEach(o => {
+                resDiv.innerHTML += `
+                    <div class="glass p-6 text-left border-l-4 ${o.status === 'İptal Edildi' ? 'border-red-600' : 'border-cyan-400'}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs opacity-50">${o.id} | ${o.date}</p>
+                                <h4 class="font-bold text-lg">${o.items.length} Ürün - ${o.total} TL</h4>
+                            </div>
+                            <span class="status-badge status-${o.status.toLowerCase().replace(' ','')}">${o.status}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function promptAdmin() {
+            const pass = prompt("Yönetici şifresi:");
+            if(pass === ADMIN_PASS) showView('admin');
+            else alert("Hatalı şifre!");
+        }
+
+        async function loadAdminOrders() {
+            const res = await fetch(`${API}/admin/orders`);
+            const orders = await res.json();
+            const tbody = document.getElementById('admin-order-rows');
+            tbody.innerHTML = '';
+            orders.reverse().forEach(o => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-white/5 text-sm">
+                        <td class="p-4">${o.id}<br><span class="text-[10px] opacity-50">${o.date}</span></td>
+                        <td class="p-4">${o.name}<br><span class="text-xs text-cyan-400">${o.email}</span></td>
+                        <td class="p-4 text-xs">${o.city}/${o.district}<br>${o.address}</td>
+                        <td class="p-4"><span class="status-badge status-${o.status.toLowerCase().replace(' ','')}">${o.status}</span></td>
+                        <td class="p-4">
+                            <select onchange="updateStatus('${o.id}', this.value)" class="text-[10px] p-1">
+                                <option value="">Değiştir...</option>
+                                <option value="Hazırlanıyor">Hazırlanıyor</option>
+                                <option value="Teslim Edildi">Teslim Edildi</option>
+                                <option value="İptal Edildi">İptal Et</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            });
+            renderAdminStock();
+        }
+
+        function renderAdminStock() {
+            const div = document.getElementById('admin-stock');
+            div.innerHTML = '';
+            products.forEach(p => {
+                div.innerHTML += `
+                    <div class="glass p-4 flex justify-between items-center">
+                        <span class="text-xs font-bold">${p.name}</span>
+                        <div class="flex items-center space-x-2">
+                            <input type="number" value="${p.stock}" onchange="updateStock(${p.id}, this.value)" class="w-16 p-1 text-center">
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function updateStatus(id, status) {
+            if(!status) return;
+            await fetch(`${API}/admin/orders/${id}/status`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status})
+            });
+            loadAdminOrders();
+        }
+
+        async function updateStock(id, stock) {
+            await fetch(`${API}/products/${id}/stock`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({stock})
+            });
+            init();
+        }
+
+        function showAdminView(mode) {
+            document.getElementById('admin-orders').classList.toggle('hidden', mode !== 'orders');
+            document.getElementById('admin-stock').classList.toggle('hidden', mode !== 'stock');
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
