@@ -19,7 +19,6 @@
 
     <style>
         :root {
-            var(--neon-color): #00f0ff; 
             --neon-color: #00f0ff; 
             --dark-bg: #0a0a0a;
         }
@@ -337,10 +336,9 @@
                 if (kayitliYuz) {
                     const descriptorArray = new Float32Array(JSON.parse(kayitliYuz));
                     const labeledDescriptor = new faceapi.LabeledFaceDescriptors("Ahmet Tuncer", [descriptorArray]);
-                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.55); // Hassasiyet
-                    console.log("Kayıtlı yüz bulundu ve yüklendi.");
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.45); // Ahmet Tuncer için hassasiyeti artırdık (0.55 -> 0.45 daha katı)
+                    console.log("Ahmet Tuncer biyometrik verisi yüklendi.");
                 } else {
-                    // Kayıtlı yüz yoksa kayda yönlendir
                     setTimeout(ilkYuzKaydiniBaslat, 3000); 
                 }
             } catch (err) {
@@ -351,10 +349,10 @@
         async function kamerayiAc() {
             kameraArayuzu.style.display = 'flex';
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 video.srcObject = stream;
             } catch (err) {
-                ekranaYaz("Sistem", "Kamera erişimi reddedildi veya kamera bulunamadı.", "hata");
+                ekranaYaz("Sistem", "Kamera erişimi reddedildi.", "hata");
             }
         }
 
@@ -366,9 +364,9 @@
         }
 
         async function ilkYuzKaydiniBaslat() {
-            ekranaYaz("Sistem", "Kayıtlı biyometrik veri bulunamadı. Lütfen kameraya bakın, yüzünüz kaydediliyor...");
-            sesliKonus("Hoşgeldiniz. Sisteme ilk girişiniz. Lütfen yüzünüzü taratmak için kameraya doğru bakın.");
-            kameraMetni.innerText = "YÜZ KAYDEDİLİYOR. LÜTFEN HAREKETSİZ KALIN...";
+            ekranaYaz("Sistem", "Ahmet Tuncer için biyometrik kayıt başlatılıyor...");
+            sesliKonus("Hoşgeldiniz patron. Lütfen yüzünüzü taratmak için kameraya bakın.");
+            kameraMetni.innerText = "PATRON KAYDEDİLİYOR...";
             
             await kamerayiAc();
 
@@ -376,30 +374,25 @@
                 const tespit = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
                 if (tespit) {
                     clearInterval(taramaAraligi);
-                    
-                    // Yüz verisini Array'e çevirip LocalStorage'a kaydet
                     const descriptorArray = Array.from(tespit.descriptor);
                     localStorage.setItem("tuncer_face_data", JSON.stringify(descriptorArray));
-                    
-                    // Matcher'ı güncelle
                     const labeledDescriptor = new faceapi.LabeledFaceDescriptors("Ahmet Tuncer", [new Float32Array(descriptorArray)]);
-                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.55);
-                    
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.45);
                     kamerayiKapat();
-                    ekranaYaz("Sistem", "Biyometrik veri başarıyla şifrelendi ve kaydedildi.");
-                    sesliKonus("Yüz profiliniz başarıyla kaydedildi patron. Artık sistemi başlatabilirsiniz.");
+                    ekranaYaz("Sistem", "Ahmet Tuncer profili başarıyla oluşturuldu.");
+                    sesliKonus("Profiliniz kaydedildi patron. Artık güvendeyiz.");
                 }
             }, 1000);
         }
 
         async function yuzIleSistemiAc() {
             if (!yuzTanimaHazir || !faceMatcher) {
-                sesliKonus("Yüz tanıma modülleri henüz hazır değil. Lütfen bekleyin.");
+                sesliKonus("Biyometrik modüller yükleniyor, bekleyin.");
                 return;
             }
 
-            ekranaYaz("Sistem", "Kimlik doğrulanıyor. Kameraya bakın...");
-            sesliKonus("Kimlik doğrulanıyor. Lütfen kameraya bakın patron.");
+            ekranaYaz("Sistem", "Biyometrik kimlik doğrulanıyor...");
+            sesliKonus("Lütfen kameraya bakın patron.");
             kameraMetni.innerText = "KİMLİK DOĞRULANIYOR...";
             await kamerayiAc();
 
@@ -410,8 +403,7 @@
                 
                 if (tespit) {
                     const eslesme = faceMatcher.findBestMatch(tespit.descriptor);
-                    if (eslesme.label === "Ahmet Tuncer") {
-                        // DOĞRU KİŞİ
+                    if (eslesme.label === "Ahmet Tuncer" && eslesme.distance < 0.45) { // Sadece sana özel kilit
                         clearInterval(taramaAraligi);
                         kamerayiKapat();
                         
@@ -421,27 +413,22 @@
                         arduinoKomutGonder("POWER_ON");
                         document.documentElement.style.setProperty('--neon-color', '#00f0ff');
                         
-                        ekranaYaz("Tuncer Zeka", "Erişim Onaylandı. Biyometrik eşleşme başarılı.");
-                        sesliKonus("Kimlik doğrulandı. Hoşgeldiniz Ahmet Tuncer. Bütün sistemler çevrimiçi.");
-                    } else {
-                        // YANLIŞ KİŞİ
-                        if (denemeSayisi > 5) {
-                            clearInterval(taramaAraligi);
-                            kamerayiKapat();
-                            ekranaYaz("Tuncer Zeka", "Erişim Reddedildi. Tanımlanamayan Yüz.", "hata");
-                            sesliKonus("Biyometrik eşleşme başarısız. Yetkisiz erişim denemesi.");
-                        }
+                        ekranaYaz("Tuncer Zeka", "Erişim Onaylandı. Hoşgeldiniz Ahmet Tuncer.");
+                        sesliKonus("Erişim onaylandı. Tüm sistemler emrinizde Ahmet Tuncer.");
+                    } else if (denemeSayisi > 8) {
+                        clearInterval(taramaAraligi);
+                        kamerayiKapat();
+                        ekranaYaz("Tuncer Zeka", "ERİŞİM REDDEDİLDİ. YETKİSİZ KİŞİ.", "hata");
+                        sesliKonus("Yetkisiz erişim denemesi tespit edildi. Sistem kilitlendi.");
                     }
                 }
 
-                // Yüz bulunamazsa zaman aşımı
                 if (denemeSayisi > 15) {
                     clearInterval(taramaAraligi);
                     kamerayiKapat();
-                    ekranaYaz("Sistem", "Yüz tespit edilemedi. Tarama iptal edildi.", "hata");
-                    sesliKonus("Yüz tespit edilemedi. Lütfen daha aydınlık bir ortamda tekrar deneyin.");
+                    ekranaYaz("Sistem", "Tarama zaman aşımına uğradı.", "hata");
                 }
-            }, 800); // Her 0.8 saniyede bir tarar
+            }, 700);
         }
 
         // --- AÇILIŞ LOGLARI ---
@@ -467,7 +454,7 @@
             } else {
                 setTimeout(() => {
                     bootScreen.style.transform = "translateY(-100%)";
-                    yuzTanimaModulleriniYukle(); // Animasyon bitince AI yüklemeye başla
+                    yuzTanimaModulleriniYukle(); 
                 }, 800);
             }
         }
@@ -530,20 +517,18 @@
         async function cevapla(cumle) {
             let k = cumle.toLowerCase();
 
-            // SİSTEM BAŞLATMA (YÜZ TANIMA TETİKLEYİCİ)
             if (k.includes("sistemi başlat") || k.includes("uyan")) {
                 if(sistemAktif) { sesliKonus("Sistem zaten devrede patron."); return; }
                 yuzIleSistemiAc();
                 return;
             }
 
-            // GÜVENLİK KİLİDİ KONTROLÜ
             if (!sistemAktif) {
                 sesliKonus("Sistem şu an kilitli. Lütfen önce beni uyandırın.");
                 return;
             }
 
-            // --- 15 ÖZEL KOMUT ---
+            // --- KOMUTLAR ---
             if (k.includes("silah sistemlerini hazırla") || k.includes("silahları hazırla")) { 
                 arduinoKomutGonder("WEAPON_90");
                 sesliKonus("Silah sistemleri devrede. Omuz roketleri ateşlemeye hazır.");
@@ -594,7 +579,6 @@
                 sesliKonus("Sistem kilitlendi. Güç tasarrufu aktif."); return;
             }
 
-            // TEMEL KOMUTLAR
             if (k.includes("ışıkları aç")) { arduinoKomutGonder("LIGHTS_ON"); sesliKonus("Işıklar açıldı."); return; }
             if (k.includes("ışıkları kapat")) { arduinoKomutGonder("LIGHTS_OFF"); sesliKonus("Işıklar kapatıldı."); return; }
             if (k.includes("kaskı aç") || k.includes("kaskı kaldır")) { arduinoKomutGonder("HELMET_90"); sesliKonus("Kask açılıyor."); return; }
@@ -611,7 +595,6 @@
             } catch (e) { ekranaYaz("Hata", "İletişim hatası."); }
         }
 
-        // --- NAVİGASYON --- (Aynı Kaldı)
         async function navigasyonAnaliz(cumle) {
             let k = cumle.toLowerCase();
             if (k.includes("götür") || k.includes("yol tarifi") || k.includes("rota")) {
@@ -670,5 +653,4 @@
     </script>
 </body>
 </html>
-
 
