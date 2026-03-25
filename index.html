@@ -214,6 +214,7 @@
         .yapay-zeka { color: var(--neon-color); font-weight: bold; transition: 0.3s; }
         .sen { color: #aaa; text-align: right; }
         .sistem { color: #00ffaa; text-align: center; font-size: 12px; }
+        .hata { color: #ff3333; text-align: center; font-weight: bold; }
 
         #komut-btn {
             background: var(--neon-color); color: #000; border: none; padding: 12px 40px;
@@ -245,7 +246,7 @@
     <!-- KAMERA / YÜZ TANIMA ARAYÜZÜ -->
     <div id="kamera-arayuzu">
         <div class="kamera-kapsayici">
-            <video id="video-element" autoplay muted></video>
+            <video id="video-element" autoplay muted playsinline></video>
             <div class="hud-scan-line"></div>
             <div class="hud-kose tl"></div>
             <div class="hud-kose tr"></div>
@@ -299,7 +300,6 @@
         const btnOto = document.getElementById("btn-oto");
         const sistemDurumEtiketi = document.getElementById("sistem-durum-etiketi");
         
-        // Kamera Değişkenleri
         const video = document.getElementById("video-element");
         const kameraArayuzu = document.getElementById("kamera-arayuzu");
         const kameraMetni = document.getElementById("kamera-metni");
@@ -308,18 +308,16 @@
         let aktifMod = 'manuel'; 
         let dinlemeAktif = false;
         let sistemAktif = false;     
+        let taramaDevamEdiyor = false; // Mükerrer taramayı önlemek için
         
         let port, writer, map, routingControl, kullaniciMarker;
 
-        // --- YAPAY ZEKA KİŞİLİĞİ ---
         let sohbetGecmisi = [{ role: "system", content: 'Sen "Tuncer Zeka"sın. Geliştiricin: Ahmet Tuncer. Kullanıcıya "patron" de. Bir Iron Man zırh yapay zekası gibi davran. Çok kısa ve net konuş.' }];
 
-        // --- SES MOTORU ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.lang = 'tr-TR';
 
-        // --- YÜZ TANIMA SİSTEMİ (FACE-API.JS) ---
         let faceMatcher = null;
         let yuzTanimaHazir = false;
 
@@ -331,12 +329,11 @@
                 await faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl);
                 yuzTanimaHazir = true;
                 
-                // Kayıtlı yüz var mı kontrol et
                 const kayitliYuz = localStorage.getItem("tuncer_face_data");
                 if (kayitliYuz) {
                     const descriptorArray = new Float32Array(JSON.parse(kayitliYuz));
                     const labeledDescriptor = new faceapi.LabeledFaceDescriptors("Ahmet Tuncer", [descriptorArray]);
-                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.45); // Ahmet Tuncer için hassasiyeti artırdık (0.55 -> 0.45 daha katı)
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.45);
                     console.log("Ahmet Tuncer biyometrik verisi yüklendi.");
                 } else {
                     setTimeout(ilkYuzKaydiniBaslat, 3000); 
@@ -351,24 +348,32 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 video.srcObject = stream;
+                return true;
             } catch (err) {
                 ekranaYaz("Sistem", "Kamera erişimi reddedildi.", "hata");
+                return false;
             }
         }
 
         function kamerayiKapat() {
             if(video.srcObject) {
                 video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
             }
             kameraArayuzu.style.display = 'none';
+            taramaDevamEdiyor = false;
         }
 
         async function ilkYuzKaydiniBaslat() {
+            if (taramaDevamEdiyor) return;
+            taramaDevamEdiyor = true;
+
             ekranaYaz("Sistem", "Ahmet Tuncer için biyometrik kayıt başlatılıyor...");
             sesliKonus("Hoşgeldiniz patron. Lütfen yüzünüzü taratmak için kameraya bakın.");
             kameraMetni.innerText = "PATRON KAYDEDİLİYOR...";
             
-            await kamerayiAc();
+            const acildi = await kamerayiAc();
+            if (!acildi) return;
 
             const taramaAraligi = setInterval(async () => {
                 const tespit = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
@@ -386,15 +391,19 @@
         }
 
         async function yuzIleSistemiAc() {
+            if (taramaDevamEdiyor) return;
             if (!yuzTanimaHazir || !faceMatcher) {
                 sesliKonus("Biyometrik modüller yükleniyor, bekleyin.");
                 return;
             }
 
+            taramaDevamEdiyor = true;
             ekranaYaz("Sistem", "Biyometrik kimlik doğrulanıyor...");
             sesliKonus("Lütfen kameraya bakın patron.");
             kameraMetni.innerText = "KİMLİK DOĞRULANIYOR...";
-            await kamerayiAc();
+            
+            const acildi = await kamerayiAc();
+            if (!acildi) return;
 
             let denemeSayisi = 0;
             const taramaAraligi = setInterval(async () => {
@@ -403,9 +412,8 @@
                 
                 if (tespit) {
                     const eslesme = faceMatcher.findBestMatch(tespit.descriptor);
-                    if (eslesme.label === "Ahmet Tuncer" && eslesme.distance < 0.45) { // Sadece sana özel kilit
+                    if (eslesme.label === "Ahmet Tuncer" && eslesme.distance < 0.45) { 
                         clearInterval(taramaAraligi);
-                        kamerayiKapat();
                         
                         sistemAktif = true;
                         hud.classList.remove("kilitli");
@@ -415,20 +423,19 @@
                         
                         ekranaYaz("Tuncer Zeka", "Erişim Onaylandı. Hoşgeldiniz Ahmet Tuncer.");
                         sesliKonus("Erişim onaylandı. Tüm sistemler emrinizde Ahmet Tuncer.");
-                    } else if (denemeSayisi > 8) {
-                        clearInterval(taramaAraligi);
-                        kamerayiKapat();
-                        ekranaYaz("Tuncer Zeka", "ERİŞİM REDDEDİLDİ. YETKİSİZ KİŞİ.", "hata");
-                        sesliKonus("Yetkisiz erişim denemesi tespit edildi. Sistem kilitlendi.");
+                        kamerayiKapat(); // En son kapatıyoruz ki döngü kırılsın
+                        return;
                     }
                 }
 
-                if (denemeSayisi > 15) {
+                // Eşleşme olmadan 10 deneme biterse reddet
+                if (denemeSayisi >= 10) {
                     clearInterval(taramaAraligi);
                     kamerayiKapat();
-                    ekranaYaz("Sistem", "Tarama zaman aşımına uğradı.", "hata");
+                    ekranaYaz("Tuncer Zeka", "ERİŞİM REDDEDİLDİ. YETKİSİZ KİŞİ.", "hata");
+                    sesliKonus("Yetkisiz erişim denemesi tespit edildi. Sistem kilitlendi.");
                 }
-            }, 700);
+            }, 800);
         }
 
         // --- AÇILIŞ LOGLARI ---
@@ -450,7 +457,7 @@
             if (logIndex < logs.length) {
                 terminal.innerHTML += logs[logIndex] + "<br>";
                 logIndex++;
-                setTimeout(runLogs, 250);
+                setTimeout(runLogs, 150);
             } else {
                 setTimeout(() => {
                     bootScreen.style.transform = "translateY(-100%)";
@@ -461,7 +468,6 @@
 
         window.onload = runLogs;
 
-        // --- ARDUINO BAĞLANTISI ---
         async function arduinoBaglan() {
             try {
                 port = await navigator.serial.requestPort();
@@ -481,7 +487,6 @@
             if (writer) await writer.write(komutStr + "\n");
         }
 
-        // --- DİNLEME VE CEVAPLAMA ---
         function modDegistir(mod) {
             aktifMod = mod;
             if (mod === 'manuel') {
@@ -528,61 +533,35 @@
                 return;
             }
 
-            // --- KOMUTLAR ---
-            if (k.includes("silah sistemlerini hazırla") || k.includes("silahları hazırla")) { 
+            if (k.includes("silahları hazırla")) { 
                 arduinoKomutGonder("WEAPON_90");
-                sesliKonus("Silah sistemleri devrede. Omuz roketleri ateşlemeye hazır.");
-                setTimeout(() => {
-                    arduinoKomutGonder("WEAPON_0");
-                    sesliKonus("Tehdit geçildi, silahlar emniyete alındı.");
-                }, 10000); 
+                sesliKonus("Silahlar çevrimiçi patron.");
                 return; 
             }
-            if (k.includes("enerji durumu")) { sesliKonus(`Ana reaktör kapasitesi yüzde ${kalanHak}.`); return; }
-            if (k.includes("savaş modu") || k.includes("kırmızı alarm")) {
+            if (k.includes("enerji durumu")) { sesliKonus(`Güç seviyesi yüzde ${kalanHak}.`); return; }
+            if (k.includes("savaş modu")) {
                 document.documentElement.style.setProperty('--neon-color', '#ff0033'); 
-                sistemDurumEtiketi.innerText = "SİSTEM: SAVAŞ MODU (KIRMIZI ALARM)";
-                arduinoKomutGonder("COMBAT_MODE_ON");
-                sesliKonus("Savaş protokolü devrede. Hedefleme sistemleri çevrimiçi."); return;
+                sistemDurumEtiketi.innerText = "SİSTEM: SAVAŞ MODU";
+                arduinoKomutGonder("COMBAT_ON");
+                sesliKonus("Savaş modu aktif."); return;
             }
             if (k.includes("normal mod")) {
                 document.documentElement.style.setProperty('--neon-color', '#00f0ff');
                 sistemDurumEtiketi.innerText = "SİSTEM: AKTİF";
-                arduinoKomutGonder("COMBAT_MODE_OFF");
-                sesliKonus("Sistem normale döndü patron."); return;
+                arduinoKomutGonder("COMBAT_OFF");
+                sesliKonus("Normale dönüldü."); return;
             }
-            if (k.includes("gizlilik modu") || k.includes("sessiz mod")) {
-                document.documentElement.style.setProperty('--neon-color', '#00ff88'); 
-                sistemDurumEtiketi.innerText = "SİSTEM: GİZLİLİK MODU (STEALTH)";
-                arduinoKomutGonder("STEALTH_ON");
-                sesliKonus("Gizlilik modu aktif. Radar izimiz gizlendi."); return;
-            }
-            if (k.includes("hasar raporu")) { sesliKonus("Zırh bütünlüğü yüzde yüz. Bütün motorlar optimal seviyede."); return; }
-            if (k.includes("çevreyi tara")) { sesliKonus("Bölgesel tarama başlatılıyor. Radara yansıtıyorum."); rotayiCiz("İstanbul"); setTimeout(() => { if(routingControl) map.removeControl(routingControl); }, 2000); return; }
-            if (k.includes("kalkanları aktar") || k.includes("tam güç")) {
-                sesliKonus("Bütün itici güç reaktörden kalkanlara yönlendiriliyor.");
-                core.style.boxShadow = "0 0 100px var(--neon-color)"; 
-                setTimeout(() => { core.style.boxShadow = "0 0 20px var(--neon-color)"; }, 5000); return;
-            }
-            if (k.includes("lazerleri aç")) { arduinoKomutGonder("LASER_ON"); sesliKonus("Taktik lazerler devrede."); return; }
-            if (k.includes("lazerleri kapat")) { arduinoKomutGonder("LASER_OFF"); sesliKonus("Lazerler devre dışı."); return; }
-            if (k.includes("itici güçleri test et")) { arduinoKomutGonder("THRUSTER_TEST"); sesliKonus("İtici motorlar test ediliyor... Normal."); return; }
-            if (k.includes("parti modu")) { arduinoKomutGonder("PARTY_MODE"); sesliKonus("Parti protokolü devrede."); return; }
-            if (k.includes("hava durumu")) { sesliKonus("Sensörlere göre dışarısı uçuş için uygun."); return; }
-            if (k.includes("kendini imha et")) { sesliKonus("Geri sayım başlatılıyor. 3... 2... Şaka yapıyorum patron."); return; }
+            
+            if (k.includes("ışıkları aç")) { arduinoKomutGonder("LIGHTS_ON"); sesliKonus("Işıklar açıldı."); return; }
+            if (k.includes("ışıkları kapat")) { arduinoKomutGonder("LIGHTS_OFF"); sesliKonus("Işıklar kapandı."); return; }
             if (k.includes("sistemi kilitle") || k.includes("uyku modu")) {
                 sistemAktif = false;
                 hud.classList.add("kilitli");
                 arduinoKomutGonder("POWER_OFF");
                 document.documentElement.style.setProperty('--neon-color', '#555555'); 
                 sistemDurumEtiketi.innerText = "SİSTEM: UYKU MODU";
-                sesliKonus("Sistem kilitlendi. Güç tasarrufu aktif."); return;
+                sesliKonus("Sistem kilitlendi."); return;
             }
-
-            if (k.includes("ışıkları aç")) { arduinoKomutGonder("LIGHTS_ON"); sesliKonus("Işıklar açıldı."); return; }
-            if (k.includes("ışıkları kapat")) { arduinoKomutGonder("LIGHTS_OFF"); sesliKonus("Işıklar kapatıldı."); return; }
-            if (k.includes("kaskı aç") || k.includes("kaskı kaldır")) { arduinoKomutGonder("HELMET_90"); sesliKonus("Kask açılıyor."); return; }
-            if (k.includes("kaskı kapat") || k.includes("kaskı indir")) { arduinoKomutGonder("HELMET_0"); sesliKonus("Kask kapatıldı."); return; }
 
             if (await navigasyonAnaliz(cumle)) return;
 
@@ -632,21 +611,21 @@
 
             routingControl.on('routesfound', (e) => {
                 map.flyToBounds(L.latLngBounds(e.routes[0].coordinates), { padding: [30, 30], duration: 2 });
-                sesliKonus("Rota hazır patron. Hedef işaretlendi.");
+                sesliKonus("Rota hazır patron.");
             });
         }
 
         function ekranaYaz(kim, yazi, tur="normal") {
-            let stil = kim === "Tuncer Zeka" ? "yapay-zeka" : (tur === "sen" ? "sen" : "sistem");
+            let stil = kim === "Tuncer Zeka" ? "yapay-zeka" : (tur === "sen" ? "sen" : (tur === "hata" ? "hata" : "sistem"));
             sohbet.innerHTML += `<div class="mesaj ${stil}"><b>${kim}:</b> ${yazi}</div>`;
             sohbet.scrollTop = sohbet.scrollHeight;
         }
 
         function sesliKonus(metin) {
-            recognition.stop();
+            window.speechSynthesis.cancel(); 
             const u = new SpeechSynthesisUtterance(metin);
             u.lang = 'tr-TR';
-            u.pitch = 0.9;
+            u.pitch = 0.8;
             u.onend = () => { if (aktifMod === 'oto') setTimeout(otoDinleBaslat, 500); };
             window.speechSynthesis.speak(u);
         }
