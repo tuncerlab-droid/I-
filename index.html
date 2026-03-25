@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TUNCER ZEKA - PRO OS v4.7</title>
+    <title>TUNCER ZEKA - PRO OS</title>
     
+    <!-- Puter.js -->
     <script src="https://js.puter.com/v2/"></script>
+    
+    <!-- Yüz Tanıma Kütüphanesi -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     
+    <!-- Leaflet Harita ve Navigasyon Kütüphaneleri -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
@@ -15,6 +19,7 @@
 
     <style>
         :root {
+            var(--neon-color): #00f0ff; 
             --neon-color: #00f0ff; 
             --dark-bg: #0a0a0a;
         }
@@ -26,100 +31,238 @@
             color: #e0e0e0;
             font-family: 'Segoe UI', 'Courier New', monospace;
             overflow: hidden;
+            transition: background-color 0.5s ease;
         }
 
-        /* BOOT SCREEN */
+        /* --- AÇILIŞ ANİMASYONU (BOOT SCREEN) --- */
         #boot-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             transition: transform 1s cubic-bezier(0.7, 0, 0.3, 1);
         }
-        #terminal-loader {
-            position: absolute; top: 20px; left: 20px; width: 300px; height: 400px;
-            font-family: monospace; font-size: 10px; color: var(--neon-color); overflow: hidden; opacity: 0.7;
-        }
-        #central-logo { text-align: center; }
-        #central-logo h1 { font-size: 42px; margin: 0; letter-spacing: 8px; color: #fff; text-shadow: 0 0 20px var(--neon-color); }
 
-        /* KAMERA ARAYÜZÜ */
+        #terminal-loader {
+            position: absolute;
+            top: 20px; left: 20px;
+            width: 300px; height: 400px;
+            font-family: monospace;
+            font-size: 10px;
+            color: var(--neon-color);
+            overflow: hidden;
+            opacity: 0.7;
+        }
+
+        #central-logo {
+            text-align: center;
+            animation: pulse-logo 2s infinite ease-in-out;
+        }
+
+        #central-logo h1 {
+            font-size: 42px;
+            margin: 0;
+            letter-spacing: 8px;
+            color: #fff;
+            text-shadow: 0 0 20px var(--neon-color), 0 0 40px var(--neon-color);
+        }
+
+        #central-logo p {
+            font-size: 12px;
+            letter-spacing: 4px;
+            color: var(--neon-color);
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        @keyframes pulse-logo {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.98); }
+        }
+
+        .scan-line {
+            width: 100%; height: 2px;
+            background: rgba(0, 240, 255, 0.1);
+            position: absolute;
+            top: 0;
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        /* --- YÜZ TANIMA KAMERA ARAYÜZÜ --- */
         #kamera-arayuzu {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 5000;
             display: none; flex-direction: column; justify-content: center; align-items: center;
             backdrop-filter: blur(5px);
         }
+        
         .kamera-kapsayici {
             position: relative; width: 320px; height: 240px;
             border: 2px solid var(--neon-color); border-radius: 10px;
             box-shadow: 0 0 30px rgba(0, 240, 255, 0.3); overflow: hidden;
         }
-        #video-element { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+        #video-element {
+            width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);
+        }
+
         .hud-scan-line {
             position: absolute; top: 0; left: 0; width: 100%; height: 4px;
             background: var(--neon-color); box-shadow: 0 0 10px var(--neon-color);
             animation: radar-scan 2s linear infinite;
         }
+
+        .hud-kose {
+            position: absolute; width: 30px; height: 30px; border-color: var(--neon-color); border-style: solid;
+        }
+        .tl { top: 10px; left: 10px; border-width: 3px 0 0 3px; }
+        .tr { top: 10px; right: 10px; border-width: 3px 3px 0 0; }
+        .bl { bottom: 10px; left: 10px; border-width: 0 0 3px 3px; }
+        .br { bottom: 10px; right: 10px; border-width: 0 3px 3px 0; }
+
         @keyframes radar-scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
 
-        /* MAIN UI */
+        #kamera-metni {
+            margin-top: 20px; color: var(--neon-color); font-size: 14px;
+            letter-spacing: 3px; text-shadow: 0 0 10px var(--neon-color); font-weight: bold;
+        }
+
+        /* --- ANA HUD TASARIMI --- */
         #main-ui {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; background-image: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-image: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
         }
+
         #ust-panel {
-            position: absolute; top: 20px; width: 90%;
+            position: absolute;
+            top: 20px; width: 90%;
             display: flex; justify-content: space-between; align-items: center;
+            z-index: 100;
         }
-        .etiket { font-size: 11px; color: var(--neon-color); letter-spacing: 2px; }
+
+        .etiket { font-size: 11px; color: var(--neon-color); letter-spacing: 2px; text-shadow: 0 0 5px var(--neon-color); transition: 0.3s;}
+
+        #kalan-hak-kutusu {
+            border: 1px solid var(--neon-color); padding: 5px 15px; border-radius: 4px; 
+            background: rgba(0, 240, 255, 0.1); color: var(--neon-color);
+            box-shadow: 0 0 10px rgba(0,240,255,0.2); transition: 0.3s;
+        }
+
         .mod-btn {
             background: #222; border: 1px solid var(--neon-color); color: var(--neon-color); padding: 8px 15px;
-            font-size: 11px; cursor: pointer; border-radius: 4px; margin-left: 5px;
+            font-size: 11px; cursor: pointer; border-radius: 4px; margin-left: 5px; transition: 0.3s;
         }
         .mod-btn.aktif { background: var(--neon-color); color: #000; box-shadow: 0 0 15px var(--neon-color); }
 
-        #hud-container { width: 150px; height: 150px; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        #btn-arduino {
+            background: #002233; color: var(--neon-color); border: 1px solid var(--neon-color);
+            padding: 8px 15px; font-size: 11px; cursor: pointer; border-radius: 4px; margin-left: 5px; transition: 0.3s;
+        }
+
+        #hud-container {
+            width: 150px; height: 150px; position: relative; display: flex;
+            align-items: center; justify-content: center; margin-bottom: 20px;
+        }
+
         #outer-ring {
             position: absolute; width: 100%; height: 100%; border: 2px solid rgba(0, 240, 255, 0.2);
             border-top: 2px solid var(--neon-color); border-bottom: 2px solid var(--neon-color); border-radius: 50%;
-            animation: spin 4s linear infinite;
+            animation: spin 4s linear infinite; transition: 0.3s;
         }
-        #core { width: 60px; height: 60px; background: radial-gradient(circle, var(--neon-color) 10%, #005577 60%, #000 100%); border-radius: 50%; box-shadow: 0 0 20px var(--neon-color); }
+        #inner-ring {
+            position: absolute; width: 75%; height: 75%; border: 1px dashed var(--neon-color); opacity: 0.5;
+            border-radius: 50%; animation: spin-reverse 6s linear infinite; transition: 0.3s;
+        }
+
+        #core {
+            width: 60px; height: 60px; background: radial-gradient(circle, var(--neon-color) 10%, #005577 60%, #000 100%);
+            border-radius: 50%; box-shadow: 0 0 20px var(--neon-color); transition: 0.3s;
+        }
+
+        .isliyor #core { background: #fff; box-shadow: 0 0 50px var(--neon-color); transform: scale(1.1); }
         .kilitli #core { background: #550000; box-shadow: 0 0 30px red; border: 1px solid red; }
+
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
 
         #sohbet-kutusu {
             width: 80%; max-width: 700px; height: 20vh; border: 1px solid var(--neon-color); background: rgba(0,0,0,0.6);
-            padding: 20px; overflow-y: auto; border-radius: 8px; margin-bottom: 15px; font-size: 14px;
+            padding: 20px; overflow-y: auto; border-radius: 8px; margin-bottom: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8); font-size: 14px; transition: height 0.5s ease, border-color 0.3s;
+            backdrop-filter: blur(5px);
         }
-        #harita-wrapper { width: 80%; max-width: 700px; height: 35vh; margin-bottom: 15px; display: none; }
-        #harita-alani { width: 100%; height: 100%; border-radius: 8px; border: 1px solid var(--neon-color); }
 
-        .yapay-zeka { color: var(--neon-color); font-weight: bold; }
-        .sen { color: #aaa; text-align: right; margin-bottom: 10px; }
-        #komut-btn { background: var(--neon-color); color: #000; border: none; padding: 12px 40px; font-size: 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        #harita-wrapper {
+            width: 80%; max-width: 700px; height: 35vh; margin-bottom: 15px;
+            display: none; opacity: 0; transform: translateY(-30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        #harita-wrapper.aktif { opacity: 1; transform: translateY(0); }
+        #harita-alani { width: 100%; height: 100%; border-radius: 8px; border: 1px solid var(--neon-color); background: #222; transition: 0.3s;}
+
+        .mesaj { margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .yapay-zeka { color: var(--neon-color); font-weight: bold; transition: 0.3s; }
+        .sen { color: #aaa; text-align: right; }
+        .sistem { color: #00ffaa; text-align: center; font-size: 12px; }
+
+        #komut-btn {
+            background: var(--neon-color); color: #000; border: none; padding: 12px 40px;
+            font-size: 15px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s;
+        }
+        #komut-btn:hover { background: #fff; transform: scale(1.05); }
+
+        /* RADAR ICON CSS */
+        .gps-pulse-container { width: 20px; height: 20px; position: relative; }
+        .gps-dot { width: 14px; height: 14px; background-color: var(--neon-color); border-radius: 50%; position: absolute; top: 3px; left: 3px; box-shadow: 0 0 15px var(--neon-color); z-index: 2; transition: 0.3s;}
+        .gps-ring { width: 14px; height: 14px; background-color: transparent; border: 2px solid var(--neon-color); border-radius: 50%; position: absolute; top: 0; left: 0; animation: radar-wave 1.5s ease-out infinite; z-index: 1; transition: 0.3s;}
+        @keyframes radar-wave { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(4); opacity: 0; } }
+
+        .leaflet-routing-container { display: none !important; }
     </style>
 </head>
 <body>
 
+    <!-- BOOT SCREEN -->
     <div id="boot-screen">
+        <div class="scan-line"></div>
         <div id="terminal-loader"></div>
-        <div id="central-logo"><h1>TUNCER</h1><p>INDUSTRIES - PRO OS v4.7</p></div>
+        <div id="central-logo">
+            <h1>TUNCER</h1>
+            <p>INDUSTRIES - PRO OS v4.6</p>
+        </div>
     </div>
 
+    <!-- KAMERA / YÜZ TANIMA ARAYÜZÜ -->
     <div id="kamera-arayuzu">
         <div class="kamera-kapsayici">
             <video id="video-element" autoplay muted></video>
             <div class="hud-scan-line"></div>
+            <div class="hud-kose tl"></div>
+            <div class="hud-kose tr"></div>
+            <div class="hud-kose bl"></div>
+            <div class="hud-kose br"></div>
         </div>
-        <div id="kamera-metni">KİMLİK DOĞRULANIYOR...</div>
+        <div id="kamera-metni">BİYOMETRİK TARAMA BEKLENİYOR...</div>
     </div>
 
+    <!-- MAIN UI -->
     <div id="main-ui">
         <div id="ust-panel">
             <div class="etiket" id="sistem-durum-etiketi">SİSTEM DURUMU: UYKU MODU</div>
             <div style="display:flex; align-items:center;">
-                <button id="btn-arduino" class="mod-btn" onclick="arduinoBaglan()">DONANIM BAĞLA</button>
+                <button id="btn-arduino" onclick="arduinoBaglan()">DONANIM BAĞLA</button>
+                <div id="kalan-hak-kutusu" style="margin-left: 20px;">GÜÇ: <span id="sayac">100</span>%</div>
                 <div style="margin-left: 20px;">
                     <button id="btn-manuel" class="mod-btn aktif" onclick="modDegistir('manuel')">MANUEL</button>
                     <button id="btn-oto" class="mod-btn" onclick="modDegistir('oto')">OTOMATİK</button>
@@ -129,162 +272,403 @@
 
         <div id="hud-container" class="kilitli">
             <div id="outer-ring"></div>
+            <div id="inner-ring"></div>
             <div id="core"></div>
         </div>
         
-        <div id="harita-wrapper"><div id="harita-alani"></div></div>
+        <div id="harita-wrapper">
+            <div id="harita-alani"></div>
+        </div>
 
         <div id="sohbet-kutusu">
-            <div class="mesaj yapay-zeka">Tuncer Zeka: Güvenlik protokolleri v4.7 aktif. Kimlik doğrulaması için sistemi başlatın.</div>
+            <div class="mesaj yapay-zeka">Tuncer Zeka: Sistem yüklemesi tamamlandı. Yüz tanıma modülleri hazır. Lütfen yetkilendirme için sistemi başlatın.</div>
         </div>
 
         <button id="komut-btn" onclick="manuelDinle()">DİNLE</button>
-        <div id="durum-metni" style="margin-top:10px; color:var(--neon-color); font-size:11px; opacity:0.6;">Beklemede</div>
+        <div id="durum-metni" style="margin-top:10px; color:var(--neon-color); font-size:11px; opacity:0.6;">Sistem Beklemede</div>
     </div>
 
     <script>
+        // --- SİSTEM DEĞİŞKENLERİ ---
         const sohbet = document.getElementById("sohbet-kutusu");
         const haritaWrapper = document.getElementById("harita-wrapper");
         const hud = document.getElementById("hud-container");
-        const statusLabel = document.getElementById("sistem-durum-etiketi");
+        const core = document.getElementById("core");
+        const komutBtn = document.getElementById("komut-btn");
+        const durumMetni = document.getElementById("durum-metni");
+        const btnManuel = document.getElementById("btn-manuel");
+        const btnOto = document.getElementById("btn-oto");
+        const sistemDurumEtiketi = document.getElementById("sistem-durum-etiketi");
+        
+        // Kamera Değişkenleri
         const video = document.getElementById("video-element");
         const kameraArayuzu = document.getElementById("kamera-arayuzu");
         const kameraMetni = document.getElementById("kamera-metni");
 
-        let port, writer, map, routingControl;
-        let sistemAktif = false;
-        let aktifMod = 'manuel';
-        let faceMatcher = null;
-        let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        let kalanHak = 100;
+        let aktifMod = 'manuel'; 
+        let dinlemeAktif = false;
+        let sistemAktif = false;     
+        
+        let port, writer, map, routingControl, kullaniciMarker;
+
+        // --- YAPAY ZEKA KİŞİLİĞİ ---
+        let sohbetGecmisi = [{ role: "system", content: 'Sen "Tuncer Zeka"sın. Geliştiricin: Ahmet Tuncer. Kullanıcıya "patron" de. Bir Iron Man zırh yapay zekası gibi davran. Çok kısa ve net konuş.' }];
+
+        // --- SES MOTORU ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
         recognition.lang = 'tr-TR';
 
-        // --- GÜVENLİK AYARI ---
-        const GUVENLIK_HASSASIYETI = 0.35; // Eskisi 0.55 idi. 0.35 çok daha sıkı bir eşleşme ister.
+        // --- YÜZ TANIMA SİSTEMİ (FACE-API.JS) ---
+        let faceMatcher = null;
+        let yuzTanimaHazir = false;
 
-        async function initAI() {
+        async function yuzTanimaModulleriniYukle() {
             const modelUrl = 'https://justadudewhohacks.github.io/face-api.js/models';
-            await faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl);
-            await faceapi.nets.faceLandmark68Net.loadFromUri(modelUrl);
-            await faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl);
-            
-            const saved = localStorage.getItem("tuncer_face_secure");
-            if (saved) {
-                const desc = new Float32Array(JSON.parse(saved));
-                faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors("Ahmet Tuncer", [desc]), GUVENLIK_HASSASIYETI);
-            } else {
-                setTimeout(yuzKaydet, 2000);
+            try {
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(modelUrl);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl);
+                yuzTanimaHazir = true;
+                
+                // Kayıtlı yüz var mı kontrol et
+                const kayitliYuz = localStorage.getItem("tuncer_face_data");
+                if (kayitliYuz) {
+                    const descriptorArray = new Float32Array(JSON.parse(kayitliYuz));
+                    const labeledDescriptor = new faceapi.LabeledFaceDescriptors("Ahmet Tuncer", [descriptorArray]);
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.55); // Hassasiyet
+                    console.log("Kayıtlı yüz bulundu ve yüklendi.");
+                } else {
+                    // Kayıtlı yüz yoksa kayda yönlendir
+                    setTimeout(ilkYuzKaydiniBaslat, 3000); 
+                }
+            } catch (err) {
+                console.error("Yüz modülleri yüklenemedi:", err);
             }
         }
 
-        async function yuzKaydet() {
+        async function kamerayiAc() {
             kameraArayuzu.style.display = 'flex';
-            kameraMetni.innerText = "YENİ YETKİLİ KAYDEDİLİYOR...";
-            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-            video.srcObject = stream;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+            } catch (err) {
+                ekranaYaz("Sistem", "Kamera erişimi reddedildi veya kamera bulunamadı.", "hata");
+            }
+        }
 
-            const scan = setInterval(async () => {
-                const detect = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
-                if (detect) {
-                    clearInterval(scan);
-                    localStorage.setItem("tuncer_face_secure", JSON.stringify(Array.from(detect.descriptor)));
-                    faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors("Ahmet Tuncer", [detect.descriptor]), GUVENLIK_HASSASIYETI);
-                    stream.getTracks().forEach(t => t.stop());
-                    kameraArayuzu.style.display = 'none';
-                    sesliKonus("Profil başarıyla oluşturuldu patron.");
+        function kamerayiKapat() {
+            if(video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            kameraArayuzu.style.display = 'none';
+        }
+
+        async function ilkYuzKaydiniBaslat() {
+            ekranaYaz("Sistem", "Kayıtlı biyometrik veri bulunamadı. Lütfen kameraya bakın, yüzünüz kaydediliyor...");
+            sesliKonus("Hoşgeldiniz. Sisteme ilk girişiniz. Lütfen yüzünüzü taratmak için kameraya doğru bakın.");
+            kameraMetni.innerText = "YÜZ KAYDEDİLİYOR. LÜTFEN HAREKETSİZ KALIN...";
+            
+            await kamerayiAc();
+
+            const taramaAraligi = setInterval(async () => {
+                const tespit = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+                if (tespit) {
+                    clearInterval(taramaAraligi);
+                    
+                    // Yüz verisini Array'e çevirip LocalStorage'a kaydet
+                    const descriptorArray = Array.from(tespit.descriptor);
+                    localStorage.setItem("tuncer_face_data", JSON.stringify(descriptorArray));
+                    
+                    // Matcher'ı güncelle
+                    const labeledDescriptor = new faceapi.LabeledFaceDescriptors("Ahmet Tuncer", [new Float32Array(descriptorArray)]);
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.55);
+                    
+                    kamerayiKapat();
+                    ekranaYaz("Sistem", "Biyometrik veri başarıyla şifrelendi ve kaydedildi.");
+                    sesliKonus("Yüz profiliniz başarıyla kaydedildi patron. Artık sistemi başlatabilirsiniz.");
                 }
             }, 1000);
         }
 
-        async function dogrula() {
-            if (!faceMatcher) return;
-            kameraArayuzu.style.display = 'flex';
-            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-            video.srcObject = stream;
+        async function yuzIleSistemiAc() {
+            if (!yuzTanimaHazir || !faceMatcher) {
+                sesliKonus("Yüz tanıma modülleri henüz hazır değil. Lütfen bekleyin.");
+                return;
+            }
 
-            let checkCount = 0;
-            const scan = setInterval(async () => {
-                checkCount++;
-                const detect = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
-                if (detect) {
-                    const match = faceMatcher.findBestMatch(detect.descriptor);
-                    // KRİTİK DÜZELTME: Sadece Ahmet Tuncer ve belirtilen hassasiyetin altındaysa aç
-                    if (match.label === "Ahmet Tuncer" && match.distance < GUVENLIK_HASSASIYETI) {
-                        clearInterval(scan);
-                        stream.getTracks().forEach(t => t.stop());
-                        kameraArayuzu.style.display = 'none';
-                        sistemiAc();
-                    } else if (match.label === "unknown" || match.distance >= GUVENLIK_HASSASIYETI) {
-                        if (checkCount > 10) {
-                            clearInterval(scan);
-                            stream.getTracks().forEach(t => t.stop());
-                            kameraArayuzu.style.display = 'none';
-                            sesliKonus("Erişim reddedildi. Biyometrik veri uyuşmuyor.");
+            ekranaYaz("Sistem", "Kimlik doğrulanıyor. Kameraya bakın...");
+            sesliKonus("Kimlik doğrulanıyor. Lütfen kameraya bakın patron.");
+            kameraMetni.innerText = "KİMLİK DOĞRULANIYOR...";
+            await kamerayiAc();
+
+            let denemeSayisi = 0;
+            const taramaAraligi = setInterval(async () => {
+                denemeSayisi++;
+                const tespit = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+                
+                if (tespit) {
+                    const eslesme = faceMatcher.findBestMatch(tespit.descriptor);
+                    if (eslesme.label === "Ahmet Tuncer") {
+                        // DOĞRU KİŞİ
+                        clearInterval(taramaAraligi);
+                        kamerayiKapat();
+                        
+                        sistemAktif = true;
+                        hud.classList.remove("kilitli");
+                        sistemDurumEtiketi.innerText = "SİSTEM DURUMU: AKTİF";
+                        arduinoKomutGonder("POWER_ON");
+                        document.documentElement.style.setProperty('--neon-color', '#00f0ff');
+                        
+                        ekranaYaz("Tuncer Zeka", "Erişim Onaylandı. Biyometrik eşleşme başarılı.");
+                        sesliKonus("Kimlik doğrulandı. Hoşgeldiniz Ahmet Tuncer. Bütün sistemler çevrimiçi.");
+                    } else {
+                        // YANLIŞ KİŞİ
+                        if (denemeSayisi > 5) {
+                            clearInterval(taramaAraligi);
+                            kamerayiKapat();
+                            ekranaYaz("Tuncer Zeka", "Erişim Reddedildi. Tanımlanamayan Yüz.", "hata");
+                            sesliKonus("Biyometrik eşleşme başarısız. Yetkisiz erişim denemesi.");
                         }
                     }
                 }
-                if(checkCount > 20) { clearInterval(scan); stream.getTracks().forEach(t => t.stop()); kameraArayuzu.style.display = 'none'; }
-            }, 600);
+
+                // Yüz bulunamazsa zaman aşımı
+                if (denemeSayisi > 15) {
+                    clearInterval(taramaAraligi);
+                    kamerayiKapat();
+                    ekranaYaz("Sistem", "Yüz tespit edilemedi. Tarama iptal edildi.", "hata");
+                    sesliKonus("Yüz tespit edilemedi. Lütfen daha aydınlık bir ortamda tekrar deneyin.");
+                }
+            }, 800); // Her 0.8 saniyede bir tarar
         }
 
-        function sistemiAc() {
-            sistemAktif = true;
-            hud.classList.remove("kilitli");
-            statusLabel.innerText = "SİSTEM DURUMU: AKTİF";
-            arduinoKomutGonder("POWER_ON");
-            sesliKonus("Hoşgeldiniz Ahmet Tuncer. Bütün sistemler çevrimiçi.");
-            ekranaYaz("Tuncer Zeka", "Erişim Onaylandı.");
+        // --- AÇILIŞ LOGLARI ---
+        const terminal = document.getElementById("terminal-loader");
+        const bootScreen = document.getElementById("boot-screen");
+        const logs = [
+            "> INITIALIZING KERNEL...",
+            "> LOADING NEURAL NETWORK...",
+            "> CONNECTING TO SATELLITE...",
+            "> LOADING BIOMETRIC AI MODELS...",
+            "> PREPARING FACE RECOGNITION API...",
+            "> WEAPON SYSTEMS STANDBY...",
+            "> TUNCER INDUSTRIES PROTOCOL v4.6",
+            "> SYSTEM READY."
+        ];
+
+        let logIndex = 0;
+        function runLogs() {
+            if (logIndex < logs.length) {
+                terminal.innerHTML += logs[logIndex] + "<br>";
+                logIndex++;
+                setTimeout(runLogs, 250);
+            } else {
+                setTimeout(() => {
+                    bootScreen.style.transform = "translateY(-100%)";
+                    yuzTanimaModulleriniYukle(); // Animasyon bitince AI yüklemeye başla
+                }, 800);
+            }
         }
 
+        window.onload = runLogs;
+
+        // --- ARDUINO BAĞLANTISI ---
         async function arduinoBaglan() {
             try {
                 port = await navigator.serial.requestPort();
-                await port.open({ baudRate: 9600 });
-                const encoder = new TextEncoderStream();
-                encoder.readable.pipeTo(port.writable);
-                writer = encoder.writable.getWriter();
-                sesliKonus("Donanım bağlandı.");
-            } catch (e) {}
+                await port.open({ baudRate: 9600 }); 
+                const textEncoder = new TextEncoderStream();
+                textEncoder.readable.pipeTo(port.writable);
+                writer = textEncoder.writable.getWriter();
+                document.getElementById('btn-arduino').style.background = "var(--neon-color)";
+                document.getElementById('btn-arduino').style.color = "#000";
+                document.getElementById('btn-arduino').innerText = "DONANIM BAĞLI";
+                ekranaYaz("Sistem", "Donanım Protokolü Bağlandı.", "sistem");
+                sesliKonus("Donanım arayüzü aktif edildi patron.");
+            } catch (e) { ekranaYaz("Hata", "Port seçilemedi.", "hata"); }
         }
 
-        async function arduinoKomutGonder(c) { if(writer) await writer.write(c + "\n"); }
+        async function arduinoKomutGonder(komutStr) {
+            if (writer) await writer.write(komutStr + "\n");
+        }
 
-        function modDegistir(m) { aktifMod = m; document.querySelectorAll('.mod-btn').forEach(b => b.classList.remove('aktif')); event.target.classList.add('aktif'); if(m === 'oto') otoDinle(); }
-        function manuelDinle() { try { recognition.start(); } catch(e){} }
-        function otoDinle() { if(aktifMod === 'oto') try { recognition.start(); } catch(e){} }
-
-        recognition.onresult = async (e) => {
-            const t = e.results[0][0].transcript.toLowerCase();
-            ekranaYaz("Sen", t);
-            if (t.includes("sistemi başlat") || t.includes("uyan")) {
-                dogrula();
-            } else if (sistemAktif) {
-                // Temel komutlar
-                if(t.includes("ışıkları aç")) arduinoKomutGonder("LIGHTS_ON");
-                if(t.includes("kaskı aç")) arduinoKomutGonder("HELMET_90");
-                if(t.includes("haritayı aç")) { haritaWrapper.style.display = 'block'; }
-                
-                // AI Cevap
-                const res = await puter.ai.chat(t);
-                ekranaYaz("Tuncer Zeka", res);
-                sesliKonus(res);
+        // --- DİNLEME VE CEVAPLAMA ---
+        function modDegistir(mod) {
+            aktifMod = mod;
+            if (mod === 'manuel') {
+                btnManuel.classList.add("aktif"); btnOto.classList.remove("aktif");
+                komutBtn.style.display = "block";
             } else {
-                sesliKonus("Sistem kilitli patron.");
+                btnManuel.classList.remove("aktif"); btnOto.classList.add("aktif");
+                komutBtn.style.display = "none"; setTimeout(otoDinleBaslat, 1000);
             }
+        }
+
+        function manuelDinle() { if (!dinlemeAktif) try { recognition.start(); } catch(e){} }
+        function otoDinleBaslat() { if (aktifMod === 'oto' && !dinlemeAktif) try { recognition.start(); } catch(e){ setTimeout(otoDinleBaslat, 500); } }
+
+        recognition.onstart = () => { dinlemeAktif = true; hud.classList.add("isliyor"); durumMetni.innerText = "Dinleniyor..."; };
+        recognition.onend = () => {
+            dinlemeAktif = false; hud.classList.remove("isliyor");
+            if (aktifMod === 'oto') setTimeout(otoDinleBaslat, 300);
         };
 
-        recognition.onend = () => { if(aktifMod === 'oto') setTimeout(otoDinle, 400); };
+        recognition.onresult = async (event) => {
+            let ses = event.results[0][0].transcript;
+            let kucukSes = ses.toLowerCase().trim();
 
-        function ekranaYaz(k, m) { sohbet.innerHTML += `<div><b class="yapay-zeka">${k}:</b> ${m}</div>`; sohbet.scrollTop = sohbet.scrollHeight; }
-        function sesliKonus(m) { const u = new SpeechSynthesisUtterance(m); u.lang = 'tr-TR'; window.speechSynthesis.speak(u); }
+            if (aktifMod === 'oto' && !sistemAktif) {
+                if (!kucukSes.includes("sistemi başlat") && !kucukSes.includes("uyan")) return;
+            }
 
-        window.onload = () => {
-            let i = 0; const logs = ["> KERNEL INIT", "> SECURE PROTOCOL 4.7", "> READY."];
-            const t = setInterval(() => {
-                if(i < logs.length) document.getElementById("terminal-loader").innerHTML += logs[i++] + "<br>";
-                else { clearInterval(t); document.getElementById("boot-screen").style.transform = "translateY(-100%)"; initAI(); }
-            }, 400);
+            ekranaYaz("Sen", ses, "sen");
+            await cevapla(ses);
         };
+
+        async function cevapla(cumle) {
+            let k = cumle.toLowerCase();
+
+            // SİSTEM BAŞLATMA (YÜZ TANIMA TETİKLEYİCİ)
+            if (k.includes("sistemi başlat") || k.includes("uyan")) {
+                if(sistemAktif) { sesliKonus("Sistem zaten devrede patron."); return; }
+                yuzIleSistemiAc();
+                return;
+            }
+
+            // GÜVENLİK KİLİDİ KONTROLÜ
+            if (!sistemAktif) {
+                sesliKonus("Sistem şu an kilitli. Lütfen önce beni uyandırın.");
+                return;
+            }
+
+            // --- 15 ÖZEL KOMUT ---
+            if (k.includes("silah sistemlerini hazırla") || k.includes("silahları hazırla")) { 
+                arduinoKomutGonder("WEAPON_90");
+                sesliKonus("Silah sistemleri devrede. Omuz roketleri ateşlemeye hazır.");
+                setTimeout(() => {
+                    arduinoKomutGonder("WEAPON_0");
+                    sesliKonus("Tehdit geçildi, silahlar emniyete alındı.");
+                }, 10000); 
+                return; 
+            }
+            if (k.includes("enerji durumu")) { sesliKonus(`Ana reaktör kapasitesi yüzde ${kalanHak}.`); return; }
+            if (k.includes("savaş modu") || k.includes("kırmızı alarm")) {
+                document.documentElement.style.setProperty('--neon-color', '#ff0033'); 
+                sistemDurumEtiketi.innerText = "SİSTEM: SAVAŞ MODU (KIRMIZI ALARM)";
+                arduinoKomutGonder("COMBAT_MODE_ON");
+                sesliKonus("Savaş protokolü devrede. Hedefleme sistemleri çevrimiçi."); return;
+            }
+            if (k.includes("normal mod")) {
+                document.documentElement.style.setProperty('--neon-color', '#00f0ff');
+                sistemDurumEtiketi.innerText = "SİSTEM: AKTİF";
+                arduinoKomutGonder("COMBAT_MODE_OFF");
+                sesliKonus("Sistem normale döndü patron."); return;
+            }
+            if (k.includes("gizlilik modu") || k.includes("sessiz mod")) {
+                document.documentElement.style.setProperty('--neon-color', '#00ff88'); 
+                sistemDurumEtiketi.innerText = "SİSTEM: GİZLİLİK MODU (STEALTH)";
+                arduinoKomutGonder("STEALTH_ON");
+                sesliKonus("Gizlilik modu aktif. Radar izimiz gizlendi."); return;
+            }
+            if (k.includes("hasar raporu")) { sesliKonus("Zırh bütünlüğü yüzde yüz. Bütün motorlar optimal seviyede."); return; }
+            if (k.includes("çevreyi tara")) { sesliKonus("Bölgesel tarama başlatılıyor. Radara yansıtıyorum."); rotayiCiz("İstanbul"); setTimeout(() => { if(routingControl) map.removeControl(routingControl); }, 2000); return; }
+            if (k.includes("kalkanları aktar") || k.includes("tam güç")) {
+                sesliKonus("Bütün itici güç reaktörden kalkanlara yönlendiriliyor.");
+                core.style.boxShadow = "0 0 100px var(--neon-color)"; 
+                setTimeout(() => { core.style.boxShadow = "0 0 20px var(--neon-color)"; }, 5000); return;
+            }
+            if (k.includes("lazerleri aç")) { arduinoKomutGonder("LASER_ON"); sesliKonus("Taktik lazerler devrede."); return; }
+            if (k.includes("lazerleri kapat")) { arduinoKomutGonder("LASER_OFF"); sesliKonus("Lazerler devre dışı."); return; }
+            if (k.includes("itici güçleri test et")) { arduinoKomutGonder("THRUSTER_TEST"); sesliKonus("İtici motorlar test ediliyor... Normal."); return; }
+            if (k.includes("parti modu")) { arduinoKomutGonder("PARTY_MODE"); sesliKonus("Parti protokolü devrede."); return; }
+            if (k.includes("hava durumu")) { sesliKonus("Sensörlere göre dışarısı uçuş için uygun."); return; }
+            if (k.includes("kendini imha et")) { sesliKonus("Geri sayım başlatılıyor. 3... 2... Şaka yapıyorum patron."); return; }
+            if (k.includes("sistemi kilitle") || k.includes("uyku modu")) {
+                sistemAktif = false;
+                hud.classList.add("kilitli");
+                arduinoKomutGonder("POWER_OFF");
+                document.documentElement.style.setProperty('--neon-color', '#555555'); 
+                sistemDurumEtiketi.innerText = "SİSTEM: UYKU MODU";
+                sesliKonus("Sistem kilitlendi. Güç tasarrufu aktif."); return;
+            }
+
+            // TEMEL KOMUTLAR
+            if (k.includes("ışıkları aç")) { arduinoKomutGonder("LIGHTS_ON"); sesliKonus("Işıklar açıldı."); return; }
+            if (k.includes("ışıkları kapat")) { arduinoKomutGonder("LIGHTS_OFF"); sesliKonus("Işıklar kapatıldı."); return; }
+            if (k.includes("kaskı aç") || k.includes("kaskı kaldır")) { arduinoKomutGonder("HELMET_90"); sesliKonus("Kask açılıyor."); return; }
+            if (k.includes("kaskı kapat") || k.includes("kaskı indir")) { arduinoKomutGonder("HELMET_0"); sesliKonus("Kask kapatıldı."); return; }
+
+            if (await navigasyonAnaliz(cumle)) return;
+
+            sohbetGecmisi.push({ role: "user", content: cumle });
+            try {
+                const cevap = await puter.ai.chat(sohbetGecmisi, { model: 'gpt-4o-mini' });
+                sohbetGecmisi.push({ role: "assistant", content: cevap.toString() });
+                ekranaYaz("Tuncer Zeka", cevap);
+                sesliKonus(cevap);
+            } catch (e) { ekranaYaz("Hata", "İletişim hatası."); }
+        }
+
+        // --- NAVİGASYON --- (Aynı Kaldı)
+        async function navigasyonAnaliz(cumle) {
+            let k = cumle.toLowerCase();
+            if (k.includes("götür") || k.includes("yol tarifi") || k.includes("rota")) {
+                let hedef = k.replace("tuncer", "").replace("beni", "").replace("götür", "").replace("yol tarifi", "").replace("rota çiz", "").trim();
+                if(hedef.length > 2) { sesliKonus(hedef + " için rota hesaplanıyor."); rotayiCiz(hedef); return true; }
+            }
+            return false;
+        }
+
+        function rotayiCiz(hedefMetin) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const bLat = pos.coords.latitude; const bLng = pos.coords.longitude;
+                let r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(hedefMetin)}&countrycodes=tr`);
+                let d = await r.json();
+                if(d.length > 0) haritaGoster(bLat, bLng, d[0].lat, d[0].lon);
+            }, null, { enableHighAccuracy: true });
+        }
+
+        function haritaGoster(basLat, basLng, bitLat, bitLng) {
+            haritaWrapper.style.display = "block";
+            setTimeout(() => { haritaWrapper.classList.add("aktif"); sohbet.style.height = "10vh"; }, 50);
+
+            if (!map) {
+                map = L.map('harita-alani', { zoomControl: false }).setView([basLat, basLng], 15);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                let radarIcon = L.divIcon({ className: 'radar', html: '<div class="gps-pulse-container"><div class="gps-ring"></div><div class="gps-dot"></div></div>', iconSize: [20, 20] });
+                kullaniciMarker = L.marker([basLat, basLng], {icon: radarIcon}).addTo(map);
+            }
+            if (routingControl) map.removeControl(routingControl);
+            routingControl = L.Routing.control({
+                waypoints: [L.latLng(basLat, basLng), L.latLng(bitLat, bitLng)],
+                show: false,
+                lineOptions: { styles: [{color: 'var(--neon-color)', opacity: 0.8, weight: 6}] }
+            }).addTo(map);
+
+            routingControl.on('routesfound', (e) => {
+                map.flyToBounds(L.latLngBounds(e.routes[0].coordinates), { padding: [30, 30], duration: 2 });
+                sesliKonus("Rota hazır patron. Hedef işaretlendi.");
+            });
+        }
+
+        function ekranaYaz(kim, yazi, tur="normal") {
+            let stil = kim === "Tuncer Zeka" ? "yapay-zeka" : (tur === "sen" ? "sen" : "sistem");
+            sohbet.innerHTML += `<div class="mesaj ${stil}"><b>${kim}:</b> ${yazi}</div>`;
+            sohbet.scrollTop = sohbet.scrollHeight;
+        }
+
+        function sesliKonus(metin) {
+            recognition.stop();
+            const u = new SpeechSynthesisUtterance(metin);
+            u.lang = 'tr-TR';
+            u.pitch = 0.9;
+            u.onend = () => { if (aktifMod === 'oto') setTimeout(otoDinleBaslat, 500); };
+            window.speechSynthesis.speak(u);
+        }
     </script>
 </body>
 </html>
+
 
