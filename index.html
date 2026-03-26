@@ -312,7 +312,7 @@
         
         let port, writer, map, routingControl, kullaniciMarker;
 
-        let sohbetGecmisi = [{ role: "system", content: 'Sen "Tuncer Zeka"sın. Geliştiricin: Ahmet Tuncer. Kullanıcıya "patron" de. Bir Iron Man zırh yapay zekası gibi davran. Çok kısa ve net konuş.' }];
+        let sohbetGecmisi = [{ role: "system", content: 'Sen "Tuncer Zeka"sın. Geliştiricin: Ahmet Tuncer. Kullanıcıya "aynır hanım" de. Bir Iron Man zırh yapay zekası gibi davran. Çok kısa ve net konuş.' }];
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
@@ -332,9 +332,9 @@
                 const kayitliYuz = localStorage.getItem("tuncer_face_data");
                 if (kayitliYuz) {
                     const descriptorArray = new Float32Array(JSON.parse(kayitliYuz));
-                    const labeledDescriptor = new faceapi.LabeledFaceDescriptors("Ahmet Tuncer", [descriptorArray]);
+                    const labeledDescriptor = new faceapi.LabeledFaceDescriptors("aynur mert", [descriptorArray]);
                     faceMatcher = new faceapi.FaceMatcher(labeledDescriptor, 0.45);
-                    console.log("Ahmet Tuncer biyometrik verisi yüklendi.");
+                    console.log("aynur mert biyometrik verisi yüklendi.");
                 } else {
                     setTimeout(ilkYuzKaydiniBaslat, 3000); 
                 }
@@ -368,7 +368,7 @@
             if (taramaDevamEdiyor) return;
             taramaDevamEdiyor = true;
 
-            ekranaYaz("Sistem", "Ahmet Tuncer için biyometrik kayıt başlatılıyor...");
+            ekranaYaz("Sistem", "aynur hanımr için biyometrik kayıt başlatılıyor...");
             sesliKonus("Hoşgeldiniz patron. Lütfen yüzünüzü taratmak için kameraya bakın.");
             kameraMetni.innerText = "PATRON KAYDEDİLİYOR...";
             
@@ -399,7 +399,7 @@
 
             taramaDevamEdiyor = true;
             ekranaYaz("Sistem", "Biyometrik kimlik doğrulanıyor...");
-            sesliKonus("Lütfen kameraya bakın patron.");
+            sesliKonus("Lütfen kameraya bakın aynur hanım.");
             kameraMetni.innerText = "KİMLİK DOĞRULANIYOR...";
             
             const acildi = await kamerayiAc();
@@ -421,8 +421,8 @@
                         arduinoKomutGonder("POWER_ON");
                         document.documentElement.style.setProperty('--neon-color', '#00f0ff');
                         
-                        ekranaYaz("Tuncer Zeka", "Erişim Onaylandı. Hoşgeldiniz Ahmet Tuncer.");
-                        sesliKonus("Erişim onaylandı. Tüm sistemler emrinizde Ahmet Tuncer.");
+                        ekranaYaz("Tuncer Zeka", "Erişim Onaylandı. Hoşgeldiniz aynur hanım.");
+                        sesliKonus("Erişim onaylandı. Tüm sistemler emrinizde aynur hanım.");
                         kamerayiKapat(); // En son kapatıyoruz ki döngü kırılsın
                         return;
                     }
