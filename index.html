@@ -1,15 +1,1793 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Hesap Makinesi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tuncer OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  body{font-family: Arial, sans-serif;background:#f0f0f0;display:flex;justify-content:center;align-items:center;height:100vh;}
-  .calculator{background:#fff;padding:20px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,.1);}
-  input, select{width:100%;padding:10px;margin:5px 0;font-size:1.1rem;}
-  button{padding:10px 15px;font-size:1rem;margin-top:10px;background:#007bff;color:#fff;border:none;border-radius:4px;}
-  button:hover{background:#0056b3;}
-  .result{margin-top:15px;font-size:1.2rem;color:#333;}
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+:root{
+  --bg:#0a0e1a;--bg2:#0f1422;--bg3:#141828;--bg4:#1a1f30;
+  --panel:#111827;--panel2:#1e2538;
+  --accent:#4f9eff;--accent2:#7b5ea7;--accent3:#3dd68c;
+  --text:#e8eaf0;--text2:#8892a4;--text3:#5a6478;
+  --border:#1e2a3d;--border2:#253347;
+  --red:#ff4757;--orange:#ffa502;--green:#2ed573;--yellow:#ffd32a;
+  --radius:10px;--radius2:6px;
+  --font:'Oxanium',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;width:100vw;height:100vh}
+
+/* BOOT */
+#boot{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1s ease}
+#boot.hide{opacity:0;pointer-events:none}
+.boot-logo{font-size:52px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#4f9eff,#7b5ea7,#3dd68c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:pulse 2s ease-in-out infinite}
+.boot-sub{font-size:13px;color:#4a5568;letter-spacing:8px;margin-top:8px;font-weight:300}
+.boot-bar{width:280px;height:2px;background:#111;margin-top:48px;border-radius:2px;overflow:hidden}
+.boot-progress{height:100%;background:linear-gradient(90deg,#4f9eff,#7b5ea7);border-radius:2px;width:0%;transition:width 0.3s ease}
+.boot-status{font-size:11px;color:#374151;margin-top:12px;letter-spacing:2px;font-family:var(--mono)}
+
+/* LOGIN */
+#login{position:fixed;inset:0;background:#000;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.8s ease;background-image:radial-gradient(ellipse at 30% 50%,rgba(79,158,255,0.05) 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,rgba(123,94,167,0.05) 0%,transparent 60%)}
+#login.show{opacity:1;pointer-events:all}
+.login-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#4f9eff,#7b5ea7);display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:16px;box-shadow:0 0 40px rgba(79,158,255,0.3)}
+.login-name{font-size:22px;font-weight:600;margin-bottom:4px}
+.login-role{font-size:12px;color:var(--text2);margin-bottom:32px;letter-spacing:2px}
+.login-input-wrap{position:relative;width:260px}
+.login-input{width:100%;padding:12px 44px 12px 16px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:var(--radius);font-family:var(--font);font-size:14px;color:var(--text);outline:none;transition:all 0.2s}
+.login-input:focus{border-color:var(--accent);background:rgba(79,158,255,0.08);box-shadow:0 0 0 3px rgba(79,158,255,0.1)}
+.login-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;transition:all 0.2s}
+.login-btn:hover{background:#3a8fe8;transform:translateY(-50%) scale(1.05)}
+.login-hint{font-size:11px;color:var(--text3);margin-top:12px;text-align:center}
+
+/* DESKTOP */
+#desktop{position:fixed;inset:0 0 44px 0;overflow:hidden;background:#0a0e1a}
+.wallpaper{position:absolute;inset:0;background:linear-gradient(135deg,#0a0e1a 0%,#0d1424 40%,#0a1028 100%)}
+.wallpaper::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 80%,rgba(79,158,255,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(123,94,167,0.08) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(61,214,140,0.04) 0%,transparent 60%)}
+
+/* DESKTOP ICONS */
+.desktop-icons{position:absolute;top:16px;left:16px;display:flex;flex-direction:column;gap:4px}
+.d-icon{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:var(--radius2);cursor:pointer;width:76px;transition:all 0.15s}
+.d-icon:hover{background:rgba(255,255,255,0.07)}
+.d-icon.selected{background:rgba(79,158,255,0.15)}
+.d-icon-img{font-size:28px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5))}
+.d-icon-label{font-size:10px;color:var(--text);text-align:center;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.8);word-break:break-word}
+
+/* TASKBAR */
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:44px;background:rgba(10,14,26,0.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 8px;gap:4px;z-index:1000}
+#start-btn{width:36px;height:32px;background:linear-gradient(135deg,#4f9eff,#7b5ea7);border:none;border-radius:var(--radius2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;flex-shrink:0}
+#start-btn:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(79,158,255,0.4)}
+.taskbar-sep{width:1px;height:20px;background:var(--border);margin:0 2px;flex-shrink:0}
+.taskbar-apps{display:flex;gap:4px;flex:1;overflow:hidden}
+.taskbar-app{display:flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(255,255,255,0.05);border:1px solid transparent;border-radius:var(--radius2);cursor:pointer;font-size:11px;color:var(--text2);transition:all 0.2s;max-width:140px;white-space:nowrap;overflow:hidden}
+.taskbar-app:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+.taskbar-app.active{background:rgba(79,158,255,0.15);border-color:var(--accent);color:var(--accent)}
+.taskbar-app.minimized{opacity:0.5}
+.taskbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+#clock{font-family:var(--mono);font-size:11px;color:var(--text2);padding:4px 8px;background:rgba(255,255,255,0.04);border-radius:4px;cursor:default}
+.sys-icon{font-size:14px;cursor:pointer;padding:4px;border-radius:4px;transition:all 0.15s}
+.sys-icon:hover{background:rgba(255,255,255,0.1)}
+
+/* START MENU */
+#start-menu{position:fixed;bottom:48px;left:8px;width:320px;background:rgba(15,20,34,0.97);backdrop-filter:blur(30px);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;z-index:2000;display:none;animation:slideUp 0.2s ease}
+#start-menu.show{display:block}
+.sm-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.sm-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#4f9eff,#7b5ea7);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sm-user{font-size:13px;font-weight:600}
+.sm-role{font-size:10px;color:var(--text2)}
+.sm-search{width:100%;padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:var(--radius2);font-family:var(--font);font-size:12px;color:var(--text);outline:none;margin-bottom:12px}
+.sm-search:focus{border-color:var(--accent)}
+.sm-apps{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.sm-app{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:var(--radius2);cursor:pointer;transition:all 0.15s;border:1px solid transparent}
+.sm-app:hover{background:rgba(79,158,255,0.1);border-color:rgba(79,158,255,0.2)}
+.sm-app-icon{font-size:18px}
+.sm-app-name{font-size:11px;font-weight:500}
+.sm-footer{display:flex;gap:6px;border-top:1px solid var(--border);padding-top:12px}
+.sm-footer-btn{flex:1;padding:7px;background:rgba(255,255,255,0.04);border:none;border-radius:var(--radius2);font-family:var(--font);font-size:11px;color:var(--text2);cursor:pointer;transition:all 0.15s}
+.sm-footer-btn:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+.sm-footer-btn.danger:hover{background:rgba(255,71,87,0.15);color:var(--red)}
+
+/* WINDOWS */
+.win{position:absolute;background:var(--panel);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04);transition:box-shadow 0.2s,opacity 0.15s;min-width:300px;min-height:200px}
+.win.focused{box-shadow:0 24px 80px rgba(0,0,0,0.8),0 0 0 1px rgba(79,158,255,0.2)}
+.win.minimized{transform:scale(0.9)translateY(20px);opacity:0;pointer-events:none}
+.win.maximized{top:0!important;left:0!important;width:100%!important;height:calc(100vh - 44px)!important;border-radius:0;border:none}
+.win-titlebar{height:36px;background:var(--bg3);display:flex;align-items:center;padding:0 12px;gap:8px;cursor:move;flex-shrink:0;border-bottom:1px solid var(--border)}
+.win-btns{display:flex;gap:6px;margin-right:6px}
+.win-btn{width:12px;height:12px;border-radius:50%;border:none;cursor:pointer;transition:all 0.15s;flex-shrink:0}
+.win-btn.close{background:#ff5f57}
+.win-btn.min{background:#febc2e}
+.win-btn.max{background:#28c840}
+.win-btn:hover{filter:brightness(1.2);transform:scale(1.1)}
+.win-title{font-size:11px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.win-title-icon{font-size:13px}
+.win-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.win-resize{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:se-resize;opacity:0.3}
+.win-resize::before{content:'';position:absolute;right:4px;bottom:4px;width:8px;height:8px;border-right:2px solid var(--text3);border-bottom:2px solid var(--text3)}
+
+/* CONTEXT MENU */
+#ctx-menu{position:fixed;background:var(--panel2);border:1px solid var(--border2);border-radius:var(--radius2);padding:4px;z-index:5000;min-width:180px;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.6)}
+#ctx-menu.show{display:block}
+.ctx-item{padding:7px 14px;font-size:12px;color:var(--text);cursor:pointer;border-radius:4px;display:flex;align-items:center;gap:8px;transition:background 0.1s}
+.ctx-item:hover{background:rgba(79,158,255,0.12);color:var(--accent)}
+.ctx-sep{height:1px;background:var(--border);margin:4px 0}
+.ctx-item.danger:hover{background:rgba(255,71,87,0.1);color:var(--red)}
+
+/* NOTIFICATION */
+#notifs{position:fixed;top:12px;right:12px;z-index:6000;display:flex;flex-direction:column;gap:8px}
+.notif{background:var(--panel2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;min-width:260px;max-width:320px;animation:slideIn 0.3s ease;display:flex;gap:10px;align-items:flex-start;box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+.notif-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.notif-title{font-size:12px;font-weight:600;margin-bottom:2px}
+.notif-msg{font-size:11px;color:var(--text2);line-height:1.4}
+.notif.success{border-left:3px solid var(--green)}
+.notif.error{border-left:3px solid var(--red)}
+.notif.info{border-left:3px solid var(--accent)}
+.notif.warning{border-left:3px solid var(--orange)}
+
+/* FILE EXPLORER */
+.fe-toolbar{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
+.fe-nav-btn{width:26px;height:26px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text2);transition:all 0.15s}
+.fe-nav-btn:hover:not(:disabled){background:rgba(255,255,255,0.12);color:var(--text)}
+.fe-nav-btn:disabled{opacity:0.3;cursor:not-allowed}
+.fe-path{flex:1;padding:4px 10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:5px;font-family:var(--mono);font-size:11px;color:var(--accent);outline:none}
+.fe-search{width:120px;padding:4px 10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:5px;font-family:var(--font);font-size:11px;color:var(--text);outline:none}
+.fe-search:focus{border-color:var(--accent)}
+.fe-layout{display:flex;flex:1;overflow:hidden}
+.fe-sidebar{width:160px;background:var(--bg2);border-right:1px solid var(--border);padding:8px;overflow-y:auto;flex-shrink:0}
+.fe-sidebar-section{font-size:9px;color:var(--text3);letter-spacing:1px;padding:8px 6px 4px;text-transform:uppercase}
+.fe-sidebar-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:5px;cursor:pointer;font-size:11px;color:var(--text2);transition:all 0.15s}
+.fe-sidebar-item:hover{background:rgba(255,255,255,0.06);color:var(--text)}
+.fe-sidebar-item.active{background:rgba(79,158,255,0.12);color:var(--accent)}
+.fe-sidebar-item-icon{font-size:14px;flex-shrink:0}
+.fe-grid{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;align-content:start}
+.fe-file{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:var(--radius2);cursor:pointer;transition:all 0.15s;border:1px solid transparent}
+.fe-file:hover{background:rgba(255,255,255,0.06)}
+.fe-file.selected{background:rgba(79,158,255,0.12);border-color:rgba(79,158,255,0.3)}
+.fe-file-icon{font-size:32px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4))}
+.fe-file-name{font-size:10px;text-align:center;line-height:1.3;color:var(--text);word-break:break-all}
+.fe-statusbar{height:24px;background:var(--bg3);border-top:1px solid var(--border);padding:0 12px;display:flex;align-items:center;font-size:10px;color:var(--text3);gap:16px;flex-shrink:0}
+
+/* TERMINAL */
+.term-body{flex:1;background:#050911;padding:12px;overflow-y:auto;font-family:var(--mono);font-size:12px;line-height:1.6;cursor:text}
+.term-line{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:2px}
+.term-prompt{color:#4f9eff;white-space:nowrap}
+.term-cmd{color:var(--text)}
+.term-output{color:#8892a4;white-space:pre-wrap;word-break:break-all;padding-left:4px}
+.term-output.success{color:#3dd68c}
+.term-output.error{color:#ff4757}
+.term-output.info{color:#ffa502}
+.term-input-line{display:flex;align-items:center;gap:4px;position:sticky;bottom:0;background:#050911;padding:4px 0}
+.term-input{flex:1;background:none;border:none;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;caret-color:var(--accent)}
+
+/* NOTEPAD */
+.np-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
+.np-btn{padding:4px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:11px;color:var(--text2);cursor:pointer;transition:all 0.15s}
+.np-btn:hover{background:rgba(255,255,255,0.12);color:var(--text)}
+.np-btn.primary{background:rgba(79,158,255,0.15);border-color:rgba(79,158,255,0.3);color:var(--accent)}
+.np-filename{flex:1;padding:4px 8px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:4px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none;max-width:180px}
+.np-filename:focus{border-color:var(--accent)}
+.np-area{flex:1;padding:16px;background:var(--bg2);border:none;font-family:var(--mono);font-size:13px;color:var(--text);resize:none;outline:none;line-height:1.7}
+.np-statusbar{height:22px;background:var(--bg3);border-top:1px solid var(--border);padding:0 12px;display:flex;align-items:center;font-size:10px;color:var(--text3);gap:16px;flex-shrink:0}
+
+/* APP STORE */
+.store-header{padding:16px;background:linear-gradient(135deg,rgba(79,158,255,0.1),rgba(123,94,167,0.1));border-bottom:1px solid var(--border);flex-shrink:0}
+.store-title{font-size:18px;font-weight:700;letter-spacing:1px}
+.store-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.store-tabs{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.store-tab{padding:5px 14px;border-radius:4px;font-size:11px;cursor:pointer;color:var(--text2);transition:all 0.15s;border:1px solid transparent}
+.store-tab.active{background:rgba(79,158,255,0.12);border-color:rgba(79,158,255,0.2);color:var(--accent)}
+.store-grid{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;align-content:start}
+.store-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;transition:all 0.2s;cursor:pointer}
+.store-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.store-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.store-card-icon{font-size:28px}
+.store-card-name{font-size:13px;font-weight:600}
+.store-card-cat{font-size:10px;color:var(--text3)}
+.store-card-desc{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px}
+.store-card-footer{display:flex;align-items:center;justify-content:space-between}
+.store-card-rating{font-size:11px;color:var(--orange)}
+.store-install-btn{padding:5px 14px;background:rgba(79,158,255,0.15);border:1px solid rgba(79,158,255,0.3);border-radius:4px;font-family:var(--font);font-size:11px;color:var(--accent);cursor:pointer;transition:all 0.15s}
+.store-install-btn:hover{background:rgba(79,158,255,0.25)}
+.store-install-btn.installed{background:rgba(61,214,140,0.1);border-color:rgba(61,214,140,0.3);color:var(--green);cursor:default}
+.store-install-btn.installing{cursor:not-allowed;opacity:0.6}
+.progress-bar{width:100%;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:6px;overflow:hidden;display:none}
+.progress-fill{height:100%;background:linear-gradient(90deg,#4f9eff,#7b5ea7);border-radius:2px;transition:width 0.2s}
+
+/* SETTINGS */
+.settings-layout{display:flex;flex:1;overflow:hidden}
+.settings-nav{width:160px;background:var(--bg2);border-right:1px solid var(--border);padding:8px}
+.settings-nav-item{padding:8px 10px;border-radius:5px;cursor:pointer;font-size:11px;color:var(--text2);transition:all 0.15s;display:flex;align-items:center;gap:8px}
+.settings-nav-item:hover{background:rgba(255,255,255,0.06);color:var(--text)}
+.settings-nav-item.active{background:rgba(79,158,255,0.12);color:var(--accent)}
+.settings-content{flex:1;overflow-y:auto;padding:20px}
+.settings-section-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.settings-section-sub{font-size:11px;color:var(--text2);margin-bottom:20px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.settings-row-label{font-size:12px;font-weight:500}
+.settings-row-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.toggle{width:36px;height:20px;background:var(--border2);border-radius:10px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.2s}
+.toggle.on::after{left:19px}
+.wallpaper-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.wp-option{height:60px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+.wp-option:hover,.wp-option.active{border-color:var(--accent);transform:scale(1.05)}
+.accent-grid{display:flex;gap:8px;margin-top:8px}
+.accent-option{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+.accent-option:hover,.accent-option.active{border-color:#fff;transform:scale(1.1)}
+
+/* BROWSER */
+.browser-bar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
+.browser-url{flex:1;padding:5px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:5px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none}
+.browser-url:focus{border-color:var(--accent);background:rgba(79,158,255,0.05)}
+.browser-go{padding:5px 12px;background:rgba(79,158,255,0.15);border:1px solid rgba(79,158,255,0.3);border-radius:5px;font-family:var(--font);font-size:11px;color:var(--accent);cursor:pointer}
+.browser-iframe{flex:1;border:none;background:#fff}
+
+/* CALCULATOR */
+.calc-display{background:#050911;padding:16px;text-align:right;flex-shrink:0}
+.calc-expr{font-size:12px;color:var(--text3);font-family:var(--mono);min-height:18px}
+.calc-result{font-size:36px;font-weight:300;font-family:var(--mono);color:var(--text);margin-top:4px}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);flex:1}
+.calc-key{background:var(--panel);font-size:16px;font-family:var(--font);color:var(--text);border:none;cursor:pointer;transition:all 0.1s;padding:0}
+.calc-key:hover{background:var(--panel2)}
+.calc-key:active{transform:scale(0.95)}
+.calc-key.op{color:var(--accent)}
+.calc-key.eq{background:rgba(79,158,255,0.15);color:var(--accent)}
+.calc-key.eq:hover{background:rgba(79,158,255,0.25)}
+.calc-key.clr{color:var(--red)}
+
+/* IMAGE VIEWER */
+.imgv-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
+.imgv-body{flex:1;background:#030508;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.imgv-img{max-width:100%;max-height:100%;object-fit:contain;transition:transform 0.2s}
+
+/* MUSIC PLAYER */
+.music-body{flex:1;display:flex;flex-direction:column;padding:20px;background:linear-gradient(135deg,#0d0f1e,#111827)}
+.music-art{width:140px;height:140px;border-radius:var(--radius);background:linear-gradient(135deg,#4f9eff,#7b5ea7);margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:60px;box-shadow:0 16px 48px rgba(79,158,255,0.3);animation:spin 8s linear infinite paused}
+.music-art.playing{animation-play-state:running}
+.music-title{font-size:16px;font-weight:600;text-align:center;margin-bottom:4px}
+.music-artist{font-size:12px;color:var(--text2);text-align:center;margin-bottom:16px}
+.music-progress{width:100%;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;cursor:pointer;margin-bottom:8px}
+.music-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.5s}
+.music-times{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:16px}
+.music-controls{display:flex;align-items:center;justify-content:center;gap:16px}
+.music-btn{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;transition:all 0.15s;padding:4px}
+.music-btn:hover{color:var(--text);transform:scale(1.1)}
+.music-btn.play{background:var(--accent);color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.music-btn.play:hover{background:#3a8fe8;transform:scale(1.05)}
+.music-playlist{border-top:1px solid var(--border);overflow-y:auto}
+.music-track{display:flex;align-items:center;gap:10px;padding:8px 20px;cursor:pointer;transition:background 0.15s;font-size:12px}
+.music-track:hover{background:rgba(255,255,255,0.04)}
+.music-track.active{background:rgba(79,158,255,0.08);color:var(--accent)}
+.music-track-num{width:20px;color:var(--text3);font-family:var(--mono)}
+.music-track-info{flex:1}
+.music-track-dur{color:var(--text3);font-family:var(--mono);font-size:10px}
+
+/* SYSTEM MONITOR */
+.sysmon-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.sysmon-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);padding:12px}
+.sysmon-title{font-size:11px;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.sysmon-value{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--text)}
+.sysmon-bar{height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-top:8px}
+.sysmon-bar-fill{height:100%;border-radius:3px;transition:width 0.5s}
+.sysmon-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sysmon-proc{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.sysmon-proc-name{flex:1;font-size:11px}
+.sysmon-proc-cpu{font-size:11px;color:var(--text2);font-family:var(--mono);width:50px;text-align:right}
+.sysmon-proc-bar{width:60px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px}
+.sysmon-proc-fill{height:100%;background:var(--accent);border-radius:2px}
+
+/* PAINT */
+.paint-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.paint-tool{width:28px;height:28px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s}
+.paint-tool:hover,.paint-tool.active{background:rgba(79,158,255,0.12);border-color:rgba(79,158,255,0.3)}
+.paint-canvas{flex:1;background:#fff;cursor:crosshair;display:block}
+.color-swatch{width:22px;height:22px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+.color-swatch:hover{transform:scale(1.2)}
+.color-swatch.active{border-color:#fff;transform:scale(1.15)}
+.size-select{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:11px;color:var(--text);padding:3px 6px;outline:none}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* Animations */
+@keyframes pulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
+@keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes winOpen{from{transform:scale(0.92);opacity:0}to{transform:scale(1);opacity:1}}
 </style>
 </head>
-<body><div class="calculator">  <input id="a" type="number" placeholder="Birinci sayı" />  <input id="b" type="number" placeholder="İkinci sayı" />  <select id="operation">    <option value="+">Toplama (+)</option>    <option value="-">Çıkarma (-)</option>    <option value="">Çarpma ()</option>    <option value="/">Bölme (/)</option>  </select>  <button id="calcBtn">Hesapla</button>  <div class="result" id="result"></div></div><script>document.getElementById('calcBtn').addEventListener('click', () => {  const a = parseFloat(document.getElementById('a').value);  const b = parseFloat(document.getElementById('b').value);  const op = document.getElementById('operation').value;  let res;  if (isNaN(a) || isNaN(b)) {    res = 'Lütfen geçerli sayılar girin.';  } else {    switch(op) {      case '+': res = a + b; break;      case '-': res = a - b; break;      case '': res = a  b; break;      case '/': res = b === 0 ? 'Sıfıra bölme hatası!' : a / b; break;      default: res = 'Bilinmeyen işlem';    }  }  document.getElementById('result').textContent = Sonuç: ${res};});</script></body></html>
+<body>
+
+<!-- BOOT -->
+<div id="boot">
+  <div class="boot-logo">TUNCER OS</div>
+  <div class="boot-sub">VERSION 1.0.0 · KERNEL 5.15</div>
+  <div class="boot-bar"><div class="boot-progress" id="boot-progress"></div></div>
+  <div class="boot-status" id="boot-status">Initializing...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-avatar">👤</div>
+  <div class="login-name">Tuncer</div>
+  <div class="login-role">ADMINISTRATOR</div>
+  <div class="login-input-wrap">
+    <input class="login-input" type="password" id="login-input" placeholder="Şifre girin..." autocomplete="off">
+    <button class="login-btn" onclick="doLogin()">→</button>
+  </div>
+  <div class="login-hint">Boş bırakın ve Enter'a basın veya "tuncer" yazın</div>
+</div>
+
+<!-- DESKTOP -->
+<div id="desktop" style="display:none">
+  <div class="wallpaper" id="wallpaper"></div>
+  <div class="desktop-icons" id="desktop-icons"></div>
+</div>
+
+<!-- TASKBAR -->
+<div id="taskbar" style="display:none">
+  <button id="start-btn" onclick="toggleStart()">⊞</button>
+  <div class="taskbar-sep"></div>
+  <div class="taskbar-apps" id="taskbar-apps"></div>
+  <div class="taskbar-right">
+    <span class="sys-icon" title="Ağ" onclick="notify('Ağ','WiFi bağlı · 150 Mbps','info','📶')">📶</span>
+    <span class="sys-icon" title="Ses" onclick="notify('Ses','Ses seviyesi: 75%','info','🔊')">🔊</span>
+    <span class="sys-icon" title="Pil" onclick="notify('Pil','Pil: %87 · Şarj edilmiyor','warning','🔋')">🔋</span>
+    <div id="clock" title="Tarih ve Saat">--:--</div>
+  </div>
+</div>
+
+<!-- START MENU -->
+<div id="start-menu">
+  <div class="sm-header">
+    <div class="sm-avatar">👤</div>
+    <div><div class="sm-user">Tuncer</div><div class="sm-role">Administrator</div></div>
+  </div>
+  <input class="sm-search" placeholder="🔍  Uygulama ara..." oninput="filterApps(this.value)" id="sm-search">
+  <div class="sm-apps" id="sm-apps"></div>
+  <div class="sm-footer">
+    <button class="sm-footer-btn" onclick="openApp('settings');closeStart()">⚙️ Ayarlar</button>
+    <button class="sm-footer-btn" onclick="lockScreen()">🔒 Kilitle</button>
+    <button class="sm-footer-btn danger" onclick="shutdownOS()">⏻ Kapat</button>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu"></div>
+
+<!-- NOTIFICATIONS -->
+<div id="notifs"></div>
+
+<!-- WINDOWS CONTAINER -->
+<div id="win-container"></div>
+
+<script>
+// ======== VIRTUAL FILESYSTEM ========
+const FS = {
+  'C:': {
+    type:'dir', children:{
+      'Users': {type:'dir', children:{
+        'Tuncer': {type:'dir', children:{
+          'Desktop': {type:'dir', children:{}},
+          'Documents': {type:'dir', children:{
+            'Notlar.txt': {type:'file', content:'Tuncer OS hoş geldiniz!\n\nBu bir not dosyasıdır.\nNotepad ile düzenleyebilirsiniz.', size:87, modified:'2025-01-01'},
+            'Proje.txt': {type:'file', content:'# Proje Planı\n\n1. Arayüz tasarımı ✅\n2. Kernel geliştirme ✅\n3. Test ✅', size:62, modified:'2025-01-02'},
+          }},
+          'Pictures': {type:'dir', children:{}},
+          'Downloads': {type:'dir', children:{
+            'readme.txt': {type:'file', content:'İndirilenler klasörüne hoş geldiniz!', size:36, modified:'2025-01-01'}
+          }},
+          'Music': {type:'dir', children:{}}
+        }}
+      }},
+      'Program Files': {type:'dir', children:{
+        'TuncerBrowser': {type:'dir', children:{}},
+        'Notepad': {type:'dir', children:{}},
+        'Terminal': {type:'dir', children:{}}
+      }},
+      'Windows': {type:'dir', children:{
+        'System32': {type:'dir', children:{
+          'kernel.dll': {type:'file', content:'System file', size:2048, modified:'2025-01-01'},
+          'drivers': {type:'dir', children:{}}
+        }}
+      }},
+      'Temp': {type:'dir', children:{}}
+    }
+  }
+};
+
+function getFSNode(path) {
+  if(path==='C:') return FS['C:'];
+  const parts = path.replace('C:\\','').split('\\').filter(Boolean);
+  let node = FS['C:'];
+  for(const p of parts) {
+    if(!node.children || !node.children[p]) return null;
+    node = node.children[p];
+  }
+  return node;
+}
+
+function getParentPath(path) {
+  if(path==='C:') return 'C:';
+  const parts = path.split('\\');
+  parts.pop();
+  return parts.join('\\') || 'C:';
+}
+
+function listDir(path) {
+  const node = getFSNode(path);
+  if(!node || node.type!=='dir') return [];
+  return Object.entries(node.children).map(([name,data])=>({name,...data}));
+}
+
+function createFile(path, name, content='') {
+  const node = getFSNode(path);
+  if(node && node.type==='dir') {
+    node.children[name] = {type:'file', content, size:content.length, modified:new Date().toISOString().slice(0,10)};
+    return true;
+  }
+  return false;
+}
+
+function createDir(path, name) {
+  const node = getFSNode(path);
+  if(node && node.type==='dir') {
+    node.children[name] = {type:'dir', children:{}};
+    return true;
+  }
+  return false;
+}
+
+function deleteEntry(path, name) {
+  const node = getFSNode(path);
+  if(node && node.type==='dir' && node.children[name]) {
+    delete node.children[name];
+    return true;
+  }
+  return false;
+}
+
+function getFileIcon(name, type) {
+  if(type==='dir') return '📁';
+  const ext = name.split('.').pop().toLowerCase();
+  const icons = {txt:'📄',md:'📝',js:'📜',html:'🌐',css:'🎨',json:'📋',png:'🖼️',jpg:'🖼️',gif:'🖼️',mp3:'🎵',mp4:'🎬',pdf:'📕',zip:'📦',exe:'⚙️',dll:'🔧'};
+  return icons[ext] || '📄';
+}
+
+// ======== WINDOW MANAGER ========
+let winCount = 0;
+let topZ = 100;
+let windows = {};
+let taskbarItems = {};
+
+function createWindow(id, title, icon, w, h, x, y, content) {
+  if(windows[id]) { focusWindow(id); return; }
+  const win = document.createElement('div');
+  win.className = 'win';
+  win.id = 'win-'+id;
+  win.style.cssText = `width:${w}px;height:${h}px;left:${x}px;top:${y}px;z-index:${++topZ};animation:winOpen 0.2s ease`;
+  win.innerHTML = `
+    <div class="win-titlebar" onmousedown="startDrag(event,'${id}')">
+      <div class="win-btns">
+        <button class="win-btn close" onclick="closeWindow('${id}')" title="Kapat"></button>
+        <button class="win-btn min" onclick="minimizeWindow('${id}')" title="Küçült"></button>
+        <button class="win-btn max" onclick="toggleMaximize('${id}')" title="Büyüt"></button>
+      </div>
+      <div class="win-title"><span class="win-title-icon">${icon}</span>${title}</div>
+    </div>
+    <div class="win-body" id="wbody-${id}">${content}</div>
+    <div class="win-resize" onmousedown="startResize(event,'${id}')"></div>
+  `;
+  win.onclick = ()=>focusWindow(id);
+  document.getElementById('win-container').appendChild(win);
+  windows[id] = {title, icon, minimized:false, maximized:false, prevPos:null};
+  addTaskbarItem(id, title, icon);
+  return win;
+}
+
+function focusWindow(id) {
+  const win = document.getElementById('win-'+id);
+  if(!win) return;
+  document.querySelectorAll('.win').forEach(w=>w.classList.remove('focused'));
+  win.classList.add('focused');
+  win.style.zIndex = ++topZ;
+  document.querySelectorAll('.taskbar-app').forEach(t=>t.classList.remove('active'));
+  const tb = document.getElementById('tb-'+id);
+  if(tb) tb.classList.add('active');
+  if(windows[id]?.minimized) restoreWindow(id);
+}
+
+function closeWindow(id) {
+  const win = document.getElementById('win-'+id);
+  if(win) { win.style.animation=''; win.style.transform='scale(0.9)'; win.style.opacity='0'; win.style.transition='all 0.15s'; setTimeout(()=>win.remove(),150); }
+  delete windows[id];
+  const tb = document.getElementById('tb-'+id);
+  if(tb) tb.remove();
+  delete taskbarItems[id];
+}
+
+function minimizeWindow(id) {
+  const win = document.getElementById('win-'+id);
+  if(!win) return;
+  win.classList.add('minimized');
+  windows[id].minimized = true;
+  const tb = document.getElementById('tb-'+id);
+  if(tb) { tb.classList.add('minimized'); tb.classList.remove('active'); }
+}
+
+function restoreWindow(id) {
+  const win = document.getElementById('win-'+id);
+  if(!win) return;
+  win.classList.remove('minimized');
+  windows[id].minimized = false;
+  focusWindow(id);
+}
+
+function toggleMaximize(id) {
+  const win = document.getElementById('win-'+id);
+  if(!win) return;
+  if(windows[id].maximized) {
+    const p = windows[id].prevPos;
+    win.style.cssText += `;top:${p.top}px;left:${p.left}px;width:${p.w}px;height:${p.h}px`;
+    win.classList.remove('maximized');
+    windows[id].maximized = false;
+  } else {
+    windows[id].prevPos = {top:parseInt(win.style.top),left:parseInt(win.style.left),w:parseInt(win.style.width),h:parseInt(win.style.height)};
+    win.classList.add('maximized');
+    windows[id].maximized = true;
+  }
+}
+
+function addTaskbarItem(id, title, icon) {
+  const apps = document.getElementById('taskbar-apps');
+  const item = document.createElement('div');
+  item.className = 'taskbar-app active';
+  item.id = 'tb-'+id;
+  item.innerHTML = `<span>${icon}</span><span>${title}</span>`;
+  item.onclick = ()=>{ if(windows[id]?.minimized) restoreWindow(id); else if(document.getElementById('win-'+id)?.classList.contains('focused')) minimizeWindow(id); else focusWindow(id); };
+  apps.appendChild(item);
+}
+
+// DRAG
+let drag = null;
+function startDrag(e, id) {
+  if(e.target.classList.contains('win-btn')) return;
+  const win = document.getElementById('win-'+id);
+  if(windows[id]?.maximized) return;
+  focusWindow(id);
+  const rect = win.getBoundingClientRect();
+  drag = {id, ox:e.clientX-rect.left, oy:e.clientY-rect.top};
+  e.preventDefault();
+}
+document.addEventListener('mousemove', e=>{
+  if(drag) {
+    const win = document.getElementById('win-'+drag.id);
+    if(win) { win.style.left=(e.clientX-drag.ox)+'px'; win.style.top=Math.max(0,e.clientY-drag.oy)+'px'; }
+  }
+  if(resz) {
+    const win = document.getElementById('win-'+resz.id);
+    if(win) { win.style.width=Math.max(300,resz.sw+(e.clientX-resz.sx))+'px'; win.style.height=Math.max(200,resz.sh+(e.clientY-resz.sy))+'px'; }
+  }
+});
+document.addEventListener('mouseup', ()=>{ drag=null; resz=null; });
+
+let resz = null;
+function startResize(e, id) {
+  const win = document.getElementById('win-'+id);
+  resz = {id, sx:e.clientX, sy:e.clientY, sw:parseInt(win.style.width), sh:parseInt(win.style.height)};
+  e.preventDefault(); e.stopPropagation();
+}
+
+// ======== APPS ========
+const APPS = [
+  {id:'explorer', name:'Dosya Gezgini', icon:'📂', cat:'Sistem', desc:'Dosya ve klasörleri yönetin', rating:'★★★★★', installed:true},
+  {id:'notepad', name:'Notepad', icon:'📝', cat:'Araçlar', desc:'Metin dosyalarını düzenleyin', rating:'★★★★☆', installed:true},
+  {id:'terminal', name:'Terminal', icon:'⬛', cat:'Sistem', desc:'Komut satırı arayüzü', rating:'★★★★★', installed:true},
+  {id:'browser', name:'Tuncer Browser', icon:'🌐', cat:'İnternet', desc:'Web tarayıcısı', rating:'★★★★☆', installed:true},
+  {id:'calc', name:'Hesap Makinesi', icon:'🔢', cat:'Araçlar', desc:'Matematik hesaplamaları', rating:'★★★☆☆', installed:true},
+  {id:'settings', name:'Ayarlar', icon:'⚙️', cat:'Sistem', desc:'Sistem ayarları', rating:'★★★★☆', installed:true},
+  {id:'sysmon', name:'Sistem Monitörü', icon:'📊', cat:'Sistem', desc:'CPU, RAM ve süreç izleme', rating:'★★★★☆', installed:true},
+  {id:'paint', name:'TuncerPaint', icon:'🎨', cat:'Grafik', desc:'Dijital çizim uygulaması', rating:'★★★★☆', installed:true},
+  {id:'music', name:'Müzik Çalar', icon:'🎵', cat:'Medya', desc:'Müzik dinleyin ve yönetin', rating:'★★★★★', installed:true},
+  {id:'store', name:'Uygulama Mağazası', icon:'🏪', cat:'Sistem', desc:'Uygulama yükleyin ve güncelleyin', rating:'★★★★☆', installed:true},
+];
+
+const STORE_APPS = [
+  {id:'vscode', name:'Tuncer Code', icon:'💻', cat:'Geliştirici', desc:'Güçlü kod editörü, sözdizimi vurgulama ve uzantı desteği ile', rating:'★★★★★'},
+  {id:'vlc', name:'Tuncer Media', icon:'📺', cat:'Medya', desc:'Her formatı destekleyen güçlü medya oynatıcı', rating:'★★★★★'},
+  {id:'discord', name:'Tuncer Chat', icon:'💬', cat:'İletişim', desc:'Sesli ve yazılı iletişim platformu', rating:'★★★★☆'},
+  {id:'photoshop', name:'Tuncer Photo', icon:'🖼️', cat:'Grafik', desc:'Profesyonel fotoğraf düzenleme ve tasarım aracı', rating:'★★★★★'},
+  {id:'office', name:'Tuncer Office', icon:'📊', cat:'Ofis', desc:'Kelime işlemci, tablo ve sunum hazırlama', rating:'★★★★☆'},
+  {id:'vpn', name:'Tuncer VPN', icon:'🔐', cat:'Güvenlik', desc:'Güvenli ağ bağlantısı ve gizlilik koruması', rating:'★★★☆☆'},
+  {id:'antivirus', name:'Tuncer Guard', icon:'🛡️', cat:'Güvenlik', desc:'Gerçek zamanlı virüs ve kötücül yazılım koruması', rating:'★★★★☆'},
+  {id:'7zip', name:'Tuncer Zip', icon:'📦', cat:'Araçlar', desc:'Dosya sıkıştırma ve arşivleme aracı', rating:'★★★★★'},
+  {id:'recorder', name:'Ekran Kaydedici', icon:'🎬', cat:'Medya', desc:'Ekran kaydı ve ekran görüntüsü alma', rating:'★★★☆☆'},
+  {id:'notes', name:'Akıllı Notlar', icon:'📔', cat:'Verimlilik', desc:'Etiket ve arama özellikli not alma uygulaması', rating:'★★★★☆'},
+];
+
+let installedApps = new Set();
+
+function openApp(id, extra) {
+  closeStart();
+  const app = APPS.find(a=>a.id===id);
+  const wcount = Object.keys(windows).length;
+  const baseX = 80 + (wcount%5)*30;
+  const baseY = 40 + (wcount%5)*30;
+
+  switch(id) {
+    case 'explorer': openExplorer(extra||'C:\\Users\\Tuncer'); break;
+    case 'notepad': openNotepad(extra); break;
+    case 'terminal': openTerminal(); break;
+    case 'browser': openBrowser(); break;
+    case 'calc': openCalc(); break;
+    case 'settings': openSettings(); break;
+    case 'sysmon': openSysmon(); break;
+    case 'paint': openPaint(); break;
+    case 'music': openMusic(); break;
+    case 'store': openStore(); break;
+  }
+}
+
+// ======== FILE EXPLORER ========
+function openExplorer(path) {
+  const wid = 'explorer-'+Date.now();
+  let currentPath = path;
+  let history = [path];
+  let histIdx = 0;
+  let selectedFile = null;
+
+  const content = `
+    <div class="fe-toolbar">
+      <button class="fe-nav-btn" id="${wid}-back" onclick="feBack('${wid}')" disabled>←</button>
+      <button class="fe-nav-btn" id="${wid}-fwd" onclick="feFwd('${wid}')" disabled>→</button>
+      <button class="fe-nav-btn" onclick="feUp('${wid}')">↑</button>
+      <input class="fe-path" id="${wid}-path" value="${path}" onkeydown="if(event.key==='Enter')feNavigate('${wid}',this.value)">
+      <input class="fe-search" placeholder="🔍 Ara..." oninput="feSearch('${wid}',this.value)">
+      <button class="fe-nav-btn" onclick="feRefresh('${wid}')" title="Yenile">↺</button>
+    </div>
+    <div class="fe-layout">
+      <div class="fe-sidebar">
+        <div class="fe-sidebar-section">Favoriler</div>
+        <div class="fe-sidebar-item" onclick="feNavigate('${wid}','C:\\\\Users\\\\Tuncer\\\\Desktop')"><span class="fe-sidebar-item-icon">🖥️</span>Masaüstü</div>
+        <div class="fe-sidebar-item" onclick="feNavigate('${wid}','C:\\\\Users\\\\Tuncer\\\\Documents')"><span class="fe-sidebar-item-icon">📄</span>Belgeler</div>
+        <div class="fe-sidebar-item" onclick="feNavigate('${wid}','C:\\\\Users\\\\Tuncer\\\\Downloads')"><span class="fe-sidebar-item-icon">⬇️</span>İndirilenler</div>
+        <div class="fe-sidebar-item" onclick="feNavigate('${wid}','C:\\\\Users\\\\Tuncer\\\\Pictures')"><span class="fe-sidebar-item-icon">🖼️</span>Resimler</div>
+        <div class="fe-sidebar-item" onclick="feNavigate('${wid}','C:\\\\Users\\\\Tuncer\\\\Music')"><span class="fe-sidebar-item-icon">🎵</span>Müzik</div>
+        <div class="fe-sidebar-section">Bu Bilgisayar</div>
+        <div class="fe-sidebar-item" onclick="feNavigate('${wid}','C:')"><span class="fe-sidebar-item-icon">💾</span>C: Sürücüsü</div>
+      </div>
+      <div class="fe-grid" id="${wid}-grid"></div>
+    </div>
+    <div class="fe-statusbar">
+      <span id="${wid}-status">Hazır</span>
+      <span id="${wid}-sel">Seçili: Yok</span>
+    </div>
+  `;
+
+  const win = createWindow(wid, 'Dosya Gezgini — '+path, '📂', 680, 460, 80, 40, content);
+  window['fe_'+wid] = {path:currentPath, history, histIdx, selected:null};
+  feRender(wid);
+}
+
+function feState(wid) { return window['fe_'+wid]; }
+
+function feRender(wid) {
+  const st = feState(wid);
+  const grid = document.getElementById(wid+'-grid');
+  const pathInput = document.getElementById(wid+'-path');
+  const status = document.getElementById(wid+'-status');
+  if(!grid) return;
+
+  const items = listDir(st.path);
+  pathInput.value = st.path;
+  status.textContent = `${items.length} öğe`;
+
+  grid.innerHTML = '';
+  items.sort((a,b)=> (a.type==='dir'&&b.type!=='dir')?-1:(a.type!=='dir'&&b.type==='dir')?1:a.name.localeCompare(b.name));
+
+  items.forEach(item=>{
+    const el = document.createElement('div');
+    el.className = 'fe-file';
+    el.innerHTML = `<div class="fe-file-icon">${getFileIcon(item.name,item.type)}</div><div class="fe-file-name">${item.name}</div>`;
+    el.onclick = ()=>{ document.querySelectorAll(`#${wid}-grid .fe-file`).forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); st.selected=item; document.getElementById(wid+'-sel').textContent='Seçili: '+item.name; };
+    el.ondblclick = ()=>{
+      if(item.type==='dir') feNavigate(wid, st.path==='C:' ? `C:\\${item.name}` : `${st.path}\\${item.name}`);
+      else if(item.type==='file') openNotepad({path:st.path, name:item.name});
+    };
+    el.oncontextmenu = e=>{ e.preventDefault(); showCtxMenu(e, feFileCtx(wid, st.path, item)); };
+    grid.appendChild(el);
+  });
+
+  document.getElementById(wid+'-back').disabled = st.histIdx<=0;
+  document.getElementById(wid+'-fwd').disabled = st.histIdx>=st.history.length-1;
+  document.getElementById('win-'+wid).querySelector('.win-title').lastChild.textContent = '  Dosya Gezgini — '+st.path.split('\\').pop();
+}
+
+function feFileCtx(wid, path, item) {
+  const items = [
+    {label:'📂 Aç', action:()=>{ if(item.type==='dir') feNavigate(wid,path==='C:'?`C:\\${item.name}`:`${path}\\${item.name}`); else openNotepad({path,name:item.name}); }},
+    {sep:true},
+    {label:'✏️ Yeniden Adlandır', action:()=>{ const n=prompt('Yeni ad:',item.name); if(n&&n!==item.name){ const node=getFSNode(path); if(node?.children){ node.children[n]=node.children[item.name]; delete node.children[item.name]; feRender(wid); } } }},
+    {label:'🗑️ Sil', action:()=>{ if(confirm(`"${item.name}" silinsin mi?`)){ deleteEntry(path,item.name); feRender(wid); notify('Silindi',`"${item.name}" silindi`,'info','🗑️'); } }, danger:true},
+  ];
+  if(item.type==='file') items.splice(1,0,{label:'📝 Notepad ile Aç', action:()=>openNotepad({path,name:item.name})});
+  return items;
+}
+
+function feNavigate(wid, path) {
+  const st = feState(wid);
+  if(path===st.path) return;
+  const node = getFSNode(path);
+  if(!node) { notify('Hata','Geçersiz yol: '+path,'error','❌'); return; }
+  st.histIdx++;
+  st.history = st.history.slice(0,st.histIdx);
+  st.history.push(path);
+  st.path = path;
+  feRender(wid);
+}
+
+function feBack(wid) {
+  const st = feState(wid);
+  if(st.histIdx>0) { st.histIdx--; st.path=st.history[st.histIdx]; feRender(wid); }
+}
+function feFwd(wid) {
+  const st = feState(wid);
+  if(st.histIdx<st.history.length-1) { st.histIdx++; st.path=st.history[st.histIdx]; feRender(wid); }
+}
+function feUp(wid) {
+  const st = feState(wid);
+  feNavigate(wid, getParentPath(st.path));
+}
+function feRefresh(wid) { feRender(wid); }
+function feSearch(wid, q) {
+  const st = feState(wid);
+  const grid = document.getElementById(wid+'-grid');
+  if(!grid) return;
+  if(!q) { feRender(wid); return; }
+  const items = listDir(st.path).filter(i=>i.name.toLowerCase().includes(q.toLowerCase()));
+  grid.innerHTML = '';
+  items.forEach(item=>{
+    const el = document.createElement('div');
+    el.className = 'fe-file';
+    el.innerHTML = `<div class="fe-file-icon">${getFileIcon(item.name,item.type)}</div><div class="fe-file-name">${item.name}</div>`;
+    grid.appendChild(el);
+  });
+  document.getElementById(wid+'-status').textContent = `${items.length} sonuç`;
+}
+
+// ======== NOTEPAD ========
+let npCount = 0;
+function openNotepad(fileInfo) {
+  const wid = 'notepad'+(++npCount);
+  let currentFile = fileInfo || null;
+  let content = '';
+  let filename = 'Yeni Belge.txt';
+
+  if(fileInfo && fileInfo.name) {
+    filename = fileInfo.name;
+    const node = getFSNode(fileInfo.path);
+    if(node?.children?.[fileInfo.name]) content = node.children[fileInfo.name].content || '';
+  }
+
+  const html = `
+    <div class="np-toolbar">
+      <input class="np-filename" id="${wid}-fname" value="${filename}" placeholder="Dosya adı...">
+      <button class="np-btn" onclick="npNew('${wid}')">Yeni</button>
+      <button class="np-btn primary" onclick="npSave('${wid}')">💾 Kaydet</button>
+      <button class="np-btn" onclick="npSaveAs('${wid}')">Farklı Kaydet</button>
+      <button class="np-btn" onclick="npDownload('${wid}')">⬇️ İndir</button>
+      <div style="flex:1"></div>
+      <button class="np-btn" onclick="npWordWrap('${wid}')">↵ Satır Kaydır</button>
+    </div>
+    <textarea class="np-area" id="${wid}-area" spellcheck="false" oninput="npUpdate('${wid}')">${content}</textarea>
+    <div class="np-statusbar">
+      <span id="${wid}-chars">Karakter: ${content.length}</span>
+      <span id="${wid}-lines">Satır: ${content.split('\n').length}</span>
+      <span id="${wid}-words">Kelime: ${content.trim()?content.trim().split(/\s+/).length:0}</span>
+      <span style="flex:1"></span>
+      <span>UTF-8</span>
+    </div>
+  `;
+
+  window['np_'+wid] = {file:fileInfo, saved:true};
+  createWindow(wid, 'Notepad — '+filename, '📝', 540, 420, 140, 60, html);
+}
+
+function npUpdate(wid) {
+  const area = document.getElementById(wid+'-area');
+  const txt = area?.value||'';
+  const el = n=>document.getElementById(wid+'-'+n);
+  if(el('chars')) el('chars').textContent='Karakter: '+txt.length;
+  if(el('lines')) el('lines').textContent='Satır: '+txt.split('\n').length;
+  if(el('words')) el('words').textContent='Kelime: '+(txt.trim()?txt.trim().split(/\s+/).length:0);
+  window['np_'+wid].saved = false;
+}
+
+function npSave(wid) {
+  const fname = document.getElementById(wid+'-fname')?.value||'Yeni Belge.txt';
+  const content = document.getElementById(wid+'-area')?.value||'';
+  const st = window['np_'+wid];
+  const savePath = st.file?.path || 'C:\\Users\\Tuncer\\Documents';
+  createFile(savePath, fname, content);
+  st.saved = true;
+  notify('Kaydedildi',`"${fname}" kaydedildi`,'success','💾');
+  document.getElementById('win-'+wid).querySelector('.win-title').lastChild.textContent = '  Notepad — '+fname;
+}
+
+function npSaveAs(wid) {
+  const fname = prompt('Kaydetme yolu ve adı (örn: C:\\Users\\Tuncer\\Documents\\dosya.txt):');
+  if(!fname) return;
+  const parts = fname.split('\\');
+  const name = parts.pop();
+  const path = parts.join('\\');
+  const content = document.getElementById(wid+'-area')?.value||'';
+  if(createFile(path, name, content)) notify('Kaydedildi',`"${name}" kaydedildi`,'success','💾');
+  else notify('Hata','Geçersiz yol!','error','❌');
+}
+
+function npDownload(wid) {
+  const fname = document.getElementById(wid+'-fname')?.value||'dosya.txt';
+  const content = document.getElementById(wid+'-area')?.value||'';
+  const blob = new Blob([content], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=fname; a.click();
+  URL.revokeObjectURL(url);
+  notify('İndirildi',`"${fname}" indirildi`,'success','⬇️');
+}
+
+function npNew(wid) {
+  const area = document.getElementById(wid+'-area');
+  const fname = document.getElementById(wid+'-fname');
+  if(area) area.value='';
+  if(fname) fname.value='Yeni Belge.txt';
+  window['np_'+wid].file=null;
+  npUpdate(wid);
+}
+
+function npWordWrap(wid) {
+  const area = document.getElementById(wid+'-area');
+  if(area) area.style.whiteSpace = area.style.whiteSpace==='nowrap' ? 'pre-wrap' : 'nowrap';
+}
+
+// ======== TERMINAL ========
+let termCount = 0;
+function openTerminal() {
+  const wid = 'terminal'+(++termCount);
+  let cwd = 'C:\\Users\\Tuncer';
+  let cmdHistory = [];
+  let histPos = -1;
+
+  const html = `
+    <div class="term-body" id="${wid}-body" onclick="document.getElementById('${wid}-input').focus()">
+      <div class="term-output success">Tuncer OS Terminal v1.0 — Kernel 5.15</div>
+      <div class="term-output">Yardım için <span style="color:#ffa502">'help'</span> yazın</div>
+      <div style="height:8px"></div>
+      <div class="term-input-line">
+        <span class="term-prompt" id="${wid}-prompt">tuncer@os:C:\\Users\\Tuncer$ </span>
+        <input class="term-input" id="${wid}-input" autofocus autocomplete="off" spellcheck="false"
+          onkeydown="termKey(event,'${wid}')">
+      </div>
+    </div>
+  `;
+
+  createWindow(wid, 'Terminal', '⬛', 580, 400, 200, 80, html);
+  window['term_'+wid] = {cwd, history:cmdHistory, histPos};
+  setTimeout(()=>document.getElementById(wid+'-input')?.focus(),100);
+}
+
+function termKey(e, wid) {
+  const st = window['term_'+wid];
+  const input = document.getElementById(wid+'-input');
+  if(e.key==='Enter') {
+    const cmd = input.value.trim();
+    input.value = '';
+    if(cmd) { st.history.unshift(cmd); st.histPos=-1; }
+    termExec(wid, cmd);
+  } else if(e.key==='ArrowUp') {
+    e.preventDefault();
+    if(st.histPos<st.history.length-1) { st.histPos++; input.value=st.history[st.histPos]||''; }
+  } else if(e.key==='ArrowDown') {
+    e.preventDefault();
+    if(st.histPos>0) { st.histPos--; input.value=st.history[st.histPos]||''; }
+    else { st.histPos=-1; input.value=''; }
+  } else if(e.key==='Tab') {
+    e.preventDefault();
+    const v = input.value;
+    const items = listDir(st.cwd).map(i=>i.name);
+    const match = items.find(i=>i.toLowerCase().startsWith(v.split(' ').pop().toLowerCase()));
+    if(match) { const parts=v.split(' '); parts[parts.length-1]=match; input.value=parts.join(' '); }
+  } else if(e.key==='l' && e.ctrlKey) {
+    e.preventDefault();
+    termClear(wid);
+  }
+}
+
+function termExec(wid, cmd) {
+  const st = window['term_'+wid];
+  const body = document.getElementById(wid+'-body');
+  const inputLine = body.querySelector('.term-input-line');
+
+  const addLine = (text, cls='')=>{
+    const d = document.createElement('div');
+    d.className='term-output '+(cls||'');
+    d.textContent = text;
+    body.insertBefore(d, inputLine);
+  };
+
+  const echoCmd = (c)=>{
+    const d = document.createElement('div');
+    d.className='term-line';
+    d.innerHTML=`<span class="term-prompt">tuncer@os:${st.cwd}$ </span><span class="term-cmd">${c}</span>`;
+    body.insertBefore(d, inputLine);
+  };
+
+  if(cmd) echoCmd(cmd);
+  if(!cmd) { body.scrollTop=body.scrollHeight; return; }
+
+  const parts = cmd.split(' ');
+  const c = parts[0].toLowerCase();
+  const args = parts.slice(1);
+
+  switch(c) {
+    case 'help':
+      addLine('┌─ Kullanılabilir Komutlar ─────────────────┐','info');
+      addLine('│ ls / dir     — Dizin içeriğini listele    │','info');
+      addLine('│ cd <dizin>   — Dizin değiştir             │','info');
+      addLine('│ pwd          — Geçerli dizini göster      │','info');
+      addLine('│ mkdir <ad>   — Yeni klasör oluştur        │','info');
+      addLine('│ touch <ad>   — Yeni dosya oluştur         │','info');
+      addLine('│ cat <dosya>  — Dosya içeriğini göster     │','info');
+      addLine('│ echo <metin> — Metin yazdır               │','info');
+      addLine('│ rm <ad>      — Dosya/klasör sil           │','info');
+      addLine('│ clear        — Ekranı temizle             │','info');
+      addLine('│ date         — Tarih/saat göster          │','info');
+      addLine('│ whoami       — Kullanıcı bilgisi          │','info');
+      addLine('│ sysinfo      — Sistem bilgisi             │','info');
+      addLine('│ download <url>— Dosya indir (simüle)      │','info');
+      addLine('└────────────────────────────────────────────┘','info');
+      break;
+    case 'ls': case 'dir':
+      const items = listDir(st.cwd);
+      if(items.length===0) addLine('(boş dizin)');
+      else {
+        addLine(`Dizin: ${st.cwd}`, 'info');
+        items.sort((a,b)=>(a.type==='dir'?0:1)-(b.type==='dir'?0:1));
+        items.forEach(i=>{
+          const d=document.createElement('div');d.className='term-output';
+          d.innerHTML=`<span style="color:${i.type==='dir'?'#4f9eff':'#8892a4'}">${i.type==='dir'?'[DIR]':'[FIL]'}</span>  ${i.name}${i.type==='file'?' ('+i.size+' B)':''}`;
+          body.insertBefore(d,inputLine);
+        });
+        addLine(`${items.length} öğe`,'success');
+      }
+      break;
+    case 'cd':
+      if(!args[0]||args[0]==='~') { st.cwd='C:\\Users\\Tuncer'; }
+      else if(args[0]==='..') { st.cwd=getParentPath(st.cwd); }
+      else {
+        const np = st.cwd==='C:'?`C:\\${args[0]}`:`${st.cwd}\\${args[0]}`;
+        const node = getFSNode(np);
+        if(node&&node.type==='dir') st.cwd=np;
+        else addLine(`cd: '${args[0]}': Dizin bulunamadı`,'error');
+      }
+      document.getElementById(wid+'-prompt').textContent=`tuncer@os:${st.cwd}$ `;
+      break;
+    case 'pwd': addLine(st.cwd,'success'); break;
+    case 'mkdir':
+      if(!args[0]) { addLine('mkdir: dizin adı gerekli','error'); break; }
+      if(createDir(st.cwd,args[0])) addLine(`Dizin oluşturuldu: ${args[0]}`,'success');
+      else addLine('mkdir: Oluşturulamadı','error');
+      break;
+    case 'touch':
+      if(!args[0]) { addLine('touch: dosya adı gerekli','error'); break; }
+      if(createFile(st.cwd,args[0],'')) addLine(`Dosya oluşturuldu: ${args[0]}`,'success');
+      else addLine('touch: Oluşturulamadı','error');
+      break;
+    case 'cat':
+      if(!args[0]) { addLine('cat: dosya adı gerekli','error'); break; }
+      const node = getFSNode(st.cwd);
+      const f = node?.children?.[args[0]];
+      if(f&&f.type==='file') addLine(f.content||'(boş dosya)');
+      else addLine(`cat: '${args[0]}': Dosya bulunamadı`,'error');
+      break;
+    case 'rm':
+      if(!args[0]) { addLine('rm: ad gerekli','error'); break; }
+      if(deleteEntry(st.cwd,args[0])) addLine(`Silindi: ${args[0]}`,'success');
+      else addLine(`rm: '${args[0]}': Bulunamadı`,'error');
+      break;
+    case 'echo':
+      addLine(args.join(' '));
+      break;
+    case 'clear': termClear(wid); break;
+    case 'date': addLine(new Date().toLocaleString('tr-TR'),'success'); break;
+    case 'whoami': addLine('tuncer (root)','success'); break;
+    case 'sysinfo':
+      addLine('=== TUNCER OS SİSTEM BİLGİSİ ===','info');
+      addLine('OS: Tuncer OS 1.0.0 (Kernel 5.15)','info');
+      addLine('CPU: TuncerCore i9 @ 4.2GHz (8 çekirdek)','info');
+      addLine('RAM: 32GB DDR5 @ 4800MHz','info');
+      addLine('GPU: Tuncer RX 7900 XTX 24GB','info');
+      addLine('Disk: 1TB NVMe SSD (Samsung 990 Pro)','info');
+      addLine('Ağ: WiFi 6E · 150 Mbps','info');
+      addLine('Çalışma süresi: '+Math.floor(Math.random()*240+60)+' dakika','info');
+      break;
+    case 'download':
+      if(!args[0]) { addLine('download: URL gerekli','error'); break; }
+      addLine(`İndiriliyor: ${args[0]}`,'info');
+      let p=0;
+      const prog = document.createElement('div'); prog.className='term-output'; prog.textContent='[          ] 0%';
+      body.insertBefore(prog, inputLine);
+      const iv = setInterval(()=>{
+        p+=Math.floor(Math.random()*15+5);
+        if(p>=100){p=100; clearInterval(iv); prog.textContent='[██████████] 100% - Tamamlandı!'; prog.classList.add('success'); notify('İndirildi','Dosya indirildi','success','⬇️'); return;}
+        const filled=Math.floor(p/10); prog.textContent='['+'█'.repeat(filled)+' '.repeat(10-filled)+`] ${p}%`;
+      },200);
+      break;
+    default: addLine(`'${c}': komut bulunamadı. 'help' yazın`,'error');
+  }
+  body.scrollTop = body.scrollHeight;
+}
+
+function termClear(wid) {
+  const body = document.getElementById(wid+'-body');
+  const inputLine = body.querySelector('.term-input-line');
+  while(body.firstChild && body.firstChild!==inputLine) body.removeChild(body.firstChild);
+}
+
+// ======== BROWSER ========
+let browserCount = 0;
+function openBrowser(url) {
+  const wid = 'browser'+(++browserCount);
+  const html = `
+    <div class="browser-bar">
+      <button class="fe-nav-btn" onclick="browserNav('${wid}','back')">←</button>
+      <button class="fe-nav-btn" onclick="browserNav('${wid}','fwd')">→</button>
+      <button class="fe-nav-btn" onclick="browserNav('${wid}','reload')">↺</button>
+      <input class="browser-url" id="${wid}-url" value="${url||'https://www.wikipedia.org'}" placeholder="URL girin..." onkeydown="if(event.key==='Enter')browserGo('${wid}')">
+      <button class="browser-go" onclick="browserGo('${wid}')">Git</button>
+    </div>
+    <iframe class="browser-iframe" id="${wid}-frame" src="${url||'https://www.wikipedia.org'}" sandbox="allow-same-origin allow-scripts allow-forms allow-navigation"></iframe>
+  `;
+  createWindow(wid,'Tuncer Browser','🌐',740,520,160,50,html);
+}
+
+function browserGo(wid) {
+  const url = document.getElementById(wid+'-url')?.value;
+  let u = url;
+  if(!/^https?:\/\//i.test(u)) u='https://'+u;
+  const frame = document.getElementById(wid+'-frame');
+  if(frame) { frame.src=u; notify('Tarayıcı',`Yükleniyor: ${u}`,'info','🌐'); }
+}
+
+function browserNav(wid, action) {
+  const frame = document.getElementById(wid+'-frame');
+  if(!frame) return;
+  if(action==='back') try{frame.contentWindow.history.back()}catch(e){}
+  if(action==='fwd') try{frame.contentWindow.history.forward()}catch(e){}
+  if(action==='reload') frame.src=frame.src;
+}
+
+// ======== CALCULATOR ========
+let calcCount = 0;
+function openCalc() {
+  const wid = 'calc'+(++calcCount);
+  const html = `
+    <div class="calc-display">
+      <div class="calc-expr" id="${wid}-expr"></div>
+      <div class="calc-result" id="${wid}-res">0</div>
+    </div>
+    <div class="calc-grid" id="${wid}-grid">
+      ${calcKeys.map(k=>`<button class="calc-key ${k.cls||''}" onclick="calcKey('${wid}','${k.v}')">${k.l||k.v}</button>`).join('')}
+    </div>
+  `;
+  createWindow(wid,'Hesap Makinesi','🔢',280,380,300,100,html);
+  window['calc_'+wid]={expr:'',result:'0',hasResult:false};
+}
+
+const calcKeys=[
+  {v:'C',l:'C',cls:'clr'},{v:'±',cls:'op'},{v:'%',cls:'op'},{v:'/',l:'÷',cls:'op'},
+  {v:'7'},{v:'8'},{v:'9'},{v:'*',l:'×',cls:'op'},
+  {v:'4'},{v:'5'},{v:'6'},{v:'-',cls:'op'},
+  {v:'1'},{v:'2'},{v:'3'},{v:'+',cls:'op'},
+  {v:'00'},{v:'0'},{v:'.',},{v:'=',cls:'eq'},
+];
+
+function calcKey(wid, v) {
+  const st = window['calc_'+wid];
+  const res = document.getElementById(wid+'-res');
+  const expr = document.getElementById(wid+'-expr');
+  if(v==='C') { st.expr=''; st.result='0'; st.hasResult=false; }
+  else if(v==='=') {
+    try { const r=eval(st.expr.replace('×','*').replace('÷','/')); st.result=r; expr.textContent=st.expr+' ='; st.expr=String(r); st.hasResult=true; }
+    catch(e) { st.result='Hata'; st.expr=''; }
+  }
+  else if(v==='±') { st.expr=st.expr.startsWith('-')?st.expr.slice(1):('-'+st.expr); st.result=st.expr; }
+  else if(v==='%') { try{st.result=eval(st.expr)/100; st.expr=String(st.result);}catch(e){} }
+  else { if(st.hasResult&&!isNaN(v)) st.expr=''; st.hasResult=false; st.expr+=v; try{st.result=eval(st.expr)||st.expr;}catch(e){st.result=st.expr;} }
+  res.textContent = String(st.result).length>10 ? parseFloat(st.result).toExponential(4) : st.result;
+  if(!st.hasResult) expr.textContent='';
+}
+
+// ======== SYSTEM MONITOR ========
+let sysmonCount=0;
+function openSysmon() {
+  const wid = 'sysmon'+(++sysmonCount);
+  const procs = [
+    {name:'System',cpu:0.5,mem:124},{name:'Kernel',cpu:1.2,mem:256},
+    {name:'explorer.exe',cpu:0.8,mem:48},{name:'notepad.exe',cpu:0.3,mem:12},
+    {name:'TuncerBrowser',cpu:3.2,mem:380},{name:'terminal.exe',cpu:0.4,mem:22},
+    {name:'sysmon.exe',cpu:0.6,mem:18},{name:'music.exe',cpu:0.9,mem:64},
+  ];
+
+  const html = `
+    <div class="sysmon-body">
+      <div class="sysmon-grid">
+        <div class="sysmon-card">
+          <div class="sysmon-title">CPU Kullanımı <span id="${wid}-cpu-val" style="color:var(--accent)">--%</span></div>
+          <div class="sysmon-value" id="${wid}-cpu">--</div>
+          <div class="sysmon-bar"><div class="sysmon-bar-fill" id="${wid}-cpu-bar" style="background:var(--accent);width:0%"></div></div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px">TuncerCore i9 @ 4.2GHz · 8 çekirdek</div>
+        </div>
+        <div class="sysmon-card">
+          <div class="sysmon-title">RAM Kullanımı <span id="${wid}-ram-val" style="color:var(--accent3)">--</span></div>
+          <div class="sysmon-value" id="${wid}-ram">--</div>
+          <div class="sysmon-bar"><div class="sysmon-bar-fill" id="${wid}-ram-bar" style="background:var(--accent3);width:0%"></div></div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px">32GB DDR5 @ 4800MHz</div>
+        </div>
+        <div class="sysmon-card">
+          <div class="sysmon-title">Disk (C:) <span id="${wid}-disk-val" style="color:var(--orange)">--</span></div>
+          <div class="sysmon-value" id="${wid}-disk">--</div>
+          <div class="sysmon-bar"><div class="sysmon-bar-fill" id="${wid}-disk-bar" style="background:var(--orange);width:0%"></div></div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px">1TB NVMe SSD · Samsung 990 Pro</div>
+        </div>
+        <div class="sysmon-card">
+          <div class="sysmon-title">GPU <span id="${wid}-gpu-val" style="color:var(--accent2)">--%</span></div>
+          <div class="sysmon-value" id="${wid}-gpu">--</div>
+          <div class="sysmon-bar"><div class="sysmon-bar-fill" id="${wid}-gpu-bar" style="background:var(--accent2);width:0%"></div></div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px">Tuncer RX 7900 XTX · 24GB VRAM</div>
+        </div>
+      </div>
+      <div class="sysmon-card">
+        <div class="sysmon-title">Çalışan Süreçler</div>
+        <div id="${wid}-procs">
+          ${procs.map(p=>`
+            <div class="sysmon-proc">
+              <span class="sysmon-proc-name">${p.name}</span>
+              <div class="sysmon-proc-bar"><div class="sysmon-proc-fill" style="width:${Math.min(100,p.cpu*10)}%"></div></div>
+              <span class="sysmon-proc-cpu">${p.cpu}%</span>
+              <span class="sysmon-proc-cpu" style="color:var(--accent3)">${p.mem}MB</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  createWindow(wid,'Sistem Monitörü','📊',500,480,240,60,html);
+
+  const update = ()=>{
+    const cpu=Math.random()*40+5;
+    const ram=52+Math.random()*20;
+    const disk=34+Math.random()*5;
+    const gpu=Math.random()*30+10;
+    const set=(s,v,u='%')=>{ const el=document.getElementById(wid+'-'+s); if(el) el.textContent=v.toFixed(1)+u; };
+    const setBar=(s,v)=>{ const el=document.getElementById(wid+'-'+s+'-bar'); if(el) el.style.width=v+'%'; };
+    set('cpu',cpu); set('cpu-val',cpu); setBar('cpu',cpu);
+    set('ram',ram); set('ram-val',ram); setBar('ram',ram);
+    set('disk',disk); set('disk-val',disk); setBar('disk',disk);
+    set('gpu',gpu); set('gpu-val',gpu); setBar('gpu',gpu);
+    const cpuEl=document.getElementById(wid+'-cpu');
+    if(cpuEl) cpuEl.textContent=cpu.toFixed(1)+'%';
+    const ramEl=document.getElementById(wid+'-ram');
+    if(ramEl) ramEl.textContent=(32*ram/100).toFixed(1)+' GB';
+    const diskEl=document.getElementById(wid+'-disk');
+    if(diskEl) diskEl.textContent=(1000*disk/100).toFixed(0)+' GB';
+    const gpuEl=document.getElementById(wid+'-gpu');
+    if(gpuEl) gpuEl.textContent=gpu.toFixed(1)+'%';
+  };
+
+  update();
+  const interval = setInterval(()=>{ if(!document.getElementById('win-'+wid)) { clearInterval(interval); return; } update(); }, 1500);
+}
+
+// ======== PAINT ========
+let paintCount=0;
+function openPaint() {
+  const wid='paint'+(++paintCount);
+  const colors=['#ff4757','#ff6b81','#ffa502','#eccc68','#2ed573','#1e90ff','#7bed9f','#70a1ff','#ffffff','#a4b0be','#57606f','#000000','#4f9eff','#7b5ea7','#3dd68c','#ff6348'];
+  const html=`
+    <div class="paint-toolbar">
+      <button class="paint-tool active" id="${wid}-t-pen" onclick="paintTool('${wid}','pen')" title="Kalem">✏️</button>
+      <button class="paint-tool" id="${wid}-t-eraser" onclick="paintTool('${wid}','eraser')" title="Silgi">⬜</button>
+      <button class="paint-tool" id="${wid}-t-line" onclick="paintTool('${wid}','line')" title="Çizgi">📏</button>
+      <button class="paint-tool" id="${wid}-t-rect" onclick="paintTool('${wid}','rect')" title="Dikdörtgen">▭</button>
+      <button class="paint-tool" id="${wid}-t-circle" onclick="paintTool('${wid}','circle')" title="Daire">◯</button>
+      <button class="paint-tool" id="${wid}-t-fill" onclick="paintTool('${wid}','fill')" title="Doldur">🪣</button>
+      <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+      <select class="size-select" onchange="window['paint_${wid}'].size=parseInt(this.value)">
+        <option value="2">2px</option><option value="4">4px</option><option value="8" selected>8px</option>
+        <option value="12">12px</option><option value="20">20px</option><option value="40">40px</option>
+      </select>
+      <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:3px;max-width:200px">
+        ${colors.map(c=>`<div class="color-swatch ${c==='#000000'?'active':''}" style="background:${c}" onclick="paintColor('${wid}','${c}',this)"></div>`).join('')}
+      </div>
+      <div style="flex:1"></div>
+      <button class="paint-tool" onclick="paintClear('${wid}')" title="Temizle">🗑️</button>
+      <button class="paint-tool" onclick="paintSave('${wid}')" title="İndir">💾</button>
+    </div>
+    <canvas class="paint-canvas" id="${wid}-canvas"
+      onmousedown="paintStart(event,'${wid}')" onmousemove="paintMove(event,'${wid}')" onmouseup="paintEnd('${wid}')" onmouseleave="paintEnd('${wid}')"></canvas>
+  `;
+  createWindow(wid,'TuncerPaint','🎨',640,480,180,70,html);
+  window['paint_'+wid]={tool:'pen',color:'#000000',size:8,drawing:false,lastX:0,lastY:0,snapshot:null};
+  setTimeout(()=>{
+    const c=document.getElementById(wid+'-canvas');
+    const win=document.getElementById('win-'+wid);
+    const body=document.getElementById('wbody-'+wid);
+    if(c&&body){
+      c.width=body.clientWidth;
+      c.height=body.clientHeight-36;
+      const ctx=c.getContext('2d');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+    }
+  },100);
+}
+
+function paintTool(wid,tool){
+  window['paint_'+wid].tool=tool;
+  document.querySelectorAll(`[id^="${wid}-t-"]`).forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById(`${wid}-t-${tool}`);
+  if(btn) btn.classList.add('active');
+}
+
+function paintColor(wid,color,el){
+  window['paint_'+wid].color=color;
+  document.querySelectorAll(`.color-swatch`).forEach(s=>s.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+
+function paintStart(e,wid){
+  const st=window['paint_'+wid];
+  const c=document.getElementById(wid+'-canvas');
+  const rect=c.getBoundingClientRect();
+  st.drawing=true;
+  st.lastX=e.clientX-rect.left;
+  st.lastY=e.clientY-rect.top;
+  const ctx=c.getContext('2d');
+  if(st.tool==='fill'){paintFill(ctx,c,Math.floor(st.lastX),Math.floor(st.lastY),st.color);return;}
+  st.snapshot=ctx.getImageData(0,0,c.width,c.height);
+  ctx.beginPath();ctx.moveTo(st.lastX,st.lastY);
+}
+
+function paintMove(e,wid){
+  const st=window['paint_'+wid];
+  if(!st.drawing) return;
+  const c=document.getElementById(wid+'-canvas');
+  const rect=c.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  const ctx=c.getContext('2d');
+  ctx.strokeStyle=st.tool==='eraser'?'#ffffff':st.color;
+  ctx.lineWidth=st.size;ctx.lineCap='round';ctx.lineJoin='round';
+  if(st.tool==='pen'||st.tool==='eraser'){ctx.lineTo(x,y);ctx.stroke();}
+  else if(st.snapshot){
+    ctx.putImageData(st.snapshot,0,0);
+    if(st.tool==='line'){ctx.beginPath();ctx.moveTo(st.lastX,st.lastY);ctx.lineTo(x,y);ctx.stroke();}
+    else if(st.tool==='rect'){ctx.strokeRect(st.lastX,st.lastY,x-st.lastX,y-st.lastY);}
+    else if(st.tool==='circle'){ctx.beginPath();ctx.ellipse((st.lastX+x)/2,(st.lastY+y)/2,Math.abs(x-st.lastX)/2,Math.abs(y-st.lastY)/2,0,0,Math.PI*2);ctx.stroke();}
+  }
+}
+
+function paintEnd(wid){window['paint_'+wid].drawing=false;}
+
+function paintFill(ctx,canvas,x,y,color){
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const d=img.data;const i=(y*canvas.width+x)*4;
+  const [tr,tg,tb,ta]=[d[i],d[i+1],d[i+2],d[i+3]];
+  const [fr,fg,fb]=hexToRgb(color);
+  if(tr===fr&&tg===fg&&tb===fb) return;
+  const stack=[[x,y]];
+  while(stack.length){
+    const [cx,cy]=stack.pop();
+    const ci=(cy*canvas.width+cx)*4;
+    if(cx<0||cx>=canvas.width||cy<0||cy>=canvas.height) continue;
+    if(d[ci]!==tr||d[ci+1]!==tg||d[ci+2]!==tb) continue;
+    d[ci]=fr;d[ci+1]=fg;d[ci+2]=fb;d[ci+3]=255;
+    stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+  }
+  ctx.putImageData(img,0,0);
+}
+
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return[r,g,b];}
+
+function paintClear(wid){
+  const c=document.getElementById(wid+'-canvas');
+  if(!c) return;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+}
+
+function paintSave(wid){
+  const c=document.getElementById(wid+'-canvas');
+  if(!c) return;
+  const a=document.createElement('a');
+  a.href=c.toDataURL('image/png');
+  a.download='tuncer-paint.png';a.click();
+  notify('Kaydedildi','Resim PNG olarak indirildi','success','🎨');
+}
+
+// ======== MUSIC PLAYER ========
+let musicCount=0;
+function openMusic(){
+  const wid='music'+(++musicCount);
+  const tracks=[
+    {title:'Cosmic Journey',artist:'Tuncer Beats',dur:'3:42',emoji:'🚀'},
+    {title:'Digital Dreams',artist:'Synth Wave',dur:'4:15',emoji:'💫'},
+    {title:'Ocean Pulse',artist:'Deep Bass',dur:'2:58',emoji:'🌊'},
+    {title:'Neon City',artist:'CyberTune',dur:'5:20',emoji:'🏙️'},
+    {title:'Solar Wind',artist:'Space Ambient',dur:'6:02',emoji:'☀️'},
+    {title:'Midnight Code',artist:'Tuncer Dev',dur:'3:33',emoji:'🌙'},
+  ];
+  let current=0, playing=false, progress=0;
+
+  const html=`
+    <div class="music-body">
+      <div class="music-art" id="${wid}-art">${tracks[0].emoji}</div>
+      <div class="music-title" id="${wid}-title">${tracks[0].title}</div>
+      <div class="music-artist" id="${wid}-artist">${tracks[0].artist}</div>
+      <div class="music-progress" onclick="musicSeek(event,'${wid}')">
+        <div class="music-progress-fill" id="${wid}-prog" style="width:0%"></div>
+      </div>
+      <div class="music-times"><span id="${wid}-cur">0:00</span><span id="${wid}-total">${tracks[0].dur}</span></div>
+      <div class="music-controls">
+        <button class="music-btn" onclick="musicPrev('${wid}')">⏮</button>
+        <button class="music-btn" onclick="musicShuffle()">🔀</button>
+        <button class="music-btn play" id="${wid}-playbtn" onclick="musicPlay('${wid}')">▶</button>
+        <button class="music-btn" onclick="musicRepeat()">🔁</button>
+        <button class="music-btn" onclick="musicNext('${wid}')">⏭</button>
+      </div>
+    </div>
+    <div class="music-playlist">
+      ${tracks.map((t,i)=>`
+        <div class="music-track${i===0?' active':''}" id="${wid}-track-${i}" onclick="musicSelect('${wid}',${i})">
+          <span class="music-track-num">${i+1}</span>
+          <div class="music-track-info"><div>${t.emoji} ${t.title}</div><div style="color:var(--text3);font-size:10px">${t.artist}</div></div>
+          <span class="music-track-dur">${t.dur}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  createWindow(wid,'Müzik Çalar','🎵',320,540,400,60,html);
+  window['music_'+wid]={current,playing,progress,tracks,interval:null};
+}
+
+function musicPlay(wid){
+  const st=window['music_'+wid];
+  st.playing=!st.playing;
+  const btn=document.getElementById(wid+'-playbtn');
+  const art=document.getElementById(wid+'-art');
+  if(btn) btn.textContent=st.playing?'⏸':'▶';
+  if(art) { if(st.playing) art.classList.add('playing'); else art.classList.remove('playing'); }
+  if(st.playing){
+    st.interval=setInterval(()=>{
+      if(!document.getElementById('win-'+wid)){clearInterval(st.interval);return;}
+      st.progress=Math.min(100,st.progress+0.5);
+      const prog=document.getElementById(wid+'-prog');
+      if(prog) prog.style.width=st.progress+'%';
+      const secs=Math.floor(st.progress/100*180);
+      const cur=document.getElementById(wid+'-cur');
+      if(cur) cur.textContent=Math.floor(secs/60)+':'+(secs%60).toString().padStart(2,'0');
+      if(st.progress>=100){st.progress=0;musicNext(wid);}
+    },300);
+  } else clearInterval(st.interval);
+}
+
+function musicNext(wid){
+  const st=window['music_'+wid];
+  st.progress=0;
+  st.current=(st.current+1)%st.tracks.length;
+  musicUpdateUI(wid);
+}
+function musicPrev(wid){
+  const st=window['music_'+wid];
+  st.progress=0;
+  st.current=(st.current-1+st.tracks.length)%st.tracks.length;
+  musicUpdateUI(wid);
+}
+function musicSelect(wid,i){
+  const st=window['music_'+wid];
+  st.current=i; st.progress=0;
+  musicUpdateUI(wid);
+  if(!st.playing) musicPlay(wid);
+}
+function musicShuffle(){notify('Müzik','Karıştırma açık','info','🔀');}
+function musicRepeat(){notify('Müzik','Tekrar açık','info','🔁');}
+function musicSeek(e,wid){
+  const st=window['music_'+wid];
+  const bar=e.currentTarget;
+  const rect=bar.getBoundingClientRect();
+  st.progress=((e.clientX-rect.left)/rect.width)*100;
+  const prog=document.getElementById(wid+'-prog');
+  if(prog) prog.style.width=st.progress+'%';
+}
+function musicUpdateUI(wid){
+  const st=window['music_'+wid];
+  const t=st.tracks[st.current];
+  const title=document.getElementById(wid+'-title');
+  const artist=document.getElementById(wid+'-artist');
+  const art=document.getElementById(wid+'-art');
+  const total=document.getElementById(wid+'-total');
+  const prog=document.getElementById(wid+'-prog');
+  if(title) title.textContent=t.title;
+  if(artist) artist.textContent=t.artist;
+  if(art) art.textContent=t.emoji;
+  if(total) total.textContent=t.dur;
+  if(prog) prog.style.width='0%';
+  document.querySelectorAll(`[id^="${wid}-track-"]`).forEach((el,i)=>{el.classList.toggle('active',i===st.current);});
+}
+
+// ======== APP STORE ========
+function openStore(){
+  const wid='store-main';
+  const installed=new Set();
+  const html=`
+    <div class="store-header">
+      <div class="store-title">🏪 Tuncer Mağazası</div>
+      <div class="store-sub">En iyi uygulamaları keşfedin ve yükleyin</div>
+    </div>
+    <div class="store-tabs">
+      <div class="store-tab active">🔥 Öne Çıkanlar</div>
+      <div class="store-tab">⭐ En İyi</div>
+      <div class="store-tab">🆕 Yeni</div>
+      <div class="store-tab">🔒 Güvenlik</div>
+    </div>
+    <div class="store-grid">
+      ${STORE_APPS.map(app=>`
+        <div class="store-card">
+          <div class="store-card-header">
+            <div class="store-card-icon">${app.icon}</div>
+            <div><div class="store-card-name">${app.name}</div><div class="store-card-cat">${app.cat}</div></div>
+          </div>
+          <div class="store-card-desc">${app.desc}</div>
+          <div class="store-card-footer">
+            <span class="store-card-rating">${app.rating}</span>
+            <div>
+              <div class="progress-bar" id="prog-${app.id}"><div class="progress-fill" id="progfill-${app.id}" style="width:0%"></div></div>
+              <button class="store-install-btn" id="ibtn-${app.id}" onclick="storeInstall('${app.id}','${app.name}')">⬇ Yükle</button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  createWindow(wid,'Tuncer Mağazası','🏪',700,520,120,50,html);
+}
+
+function storeInstall(id,name){
+  const btn=document.getElementById('ibtn-'+id);
+  const progBar=document.getElementById('prog-'+id);
+  const progFill=document.getElementById('progfill-'+id);
+  if(!btn||btn.classList.contains('installed')||btn.classList.contains('installing')) return;
+  btn.classList.add('installing');
+  btn.textContent='Yükleniyor...';
+  progBar.style.display='block';
+  let p=0;
+  const iv=setInterval(()=>{
+    p+=Math.random()*12+3;
+    if(p>=100){
+      p=100;clearInterval(iv);
+      progFill.style.width='100%';
+      setTimeout(()=>{
+        btn.classList.remove('installing');btn.classList.add('installed');
+        btn.textContent='✓ Yüklendi';
+        progBar.style.display='none';
+        notify('Yüklendi',`"${name}" başarıyla yüklendi`,'success','✅');
+      },400);
+    }
+    progFill.style.width=p+'%';
+  },150);
+}
+
+// ======== SETTINGS ========
+function openSettings(){
+  const wid='settings-main';
+  const wallpapers=[
+    {bg:'linear-gradient(135deg,#0a0e1a,#0d1424)',label:'Varsayılan'},
+    {bg:'linear-gradient(135deg,#1a0a2e,#16213e)',label:'Uzay'},
+    {bg:'linear-gradient(135deg,#0d2137,#1a3a52)',label:'Okyanus'},
+    {bg:'linear-gradient(135deg,#0f1e0a,#1a3010)',label:'Orman'},
+    {bg:'linear-gradient(135deg,#1a0a0a,#2e1010)',label:'Kırmızı'},
+    {bg:'linear-gradient(135deg,#1a1a0a,#2e2a10)',label:'Altın'},
+    {bg:'linear-gradient(135deg,#2a2a2a,#1a1a1a)',label:'Gri'},
+    {bg:'linear-gradient(135deg,#0a1a1a,#102828)',label:'Teal'},
+  ];
+
+  const html=`
+    <div class="settings-layout">
+      <div class="settings-nav">
+        <div class="settings-nav-item active" onclick="settingsTab(this,'${wid}','appearance')">🎨 Görünüm</div>
+        <div class="settings-nav-item" onclick="settingsTab(this,'${wid}','system')">⚙️ Sistem</div>
+        <div class="settings-nav-item" onclick="settingsTab(this,'${wid}','network')">📶 Ağ</div>
+        <div class="settings-nav-item" onclick="settingsTab(this,'${wid}','security')">🔒 Güvenlik</div>
+        <div class="settings-nav-item" onclick="settingsTab(this,'${wid}','about')">ℹ️ Hakkında</div>
+      </div>
+      <div class="settings-content" id="${wid}-content">
+        <div class="settings-section-title">Görünüm Ayarları</div>
+        <div class="settings-section-sub">Masaüstü ve arayüz özelleştirme</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Karanlık Mod</div><div class="settings-row-sub">Sistem genelinde karanlık tema</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Animasyonlar</div><div class="settings-row-sub">Pencere ve geçiş animasyonları</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Saydamlık</div><div class="settings-row-sub">Cam efekti ve bulanıklık</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Duvar Kağıdı</div></div>
+        </div>
+        <div class="wallpaper-grid">
+          ${wallpapers.map((w,i)=>`<div class="wp-option${i===0?' active':''}" style="background:${w.bg}" title="${w.label}" onclick="setWallpaper('${w.bg}',this)"></div>`).join('')}
+        </div>
+        <div class="settings-row" style="margin-top:16px">
+          <div><div class="settings-row-label">Vurgu Rengi</div></div>
+        </div>
+        <div class="accent-grid">
+          ${[['#4f9eff','Mavi'],['#7b5ea7','Mor'],['#3dd68c','Yeşil'],['#ff4757','Kırmızı'],['#ffa502','Turuncu'],['#eccc68','Sarı']].map(([c,l])=>`<div class="accent-option" style="background:${c}" title="${l}" onclick="setAccent('${c}',this)"></div>`).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  createWindow(wid,'Ayarlar','⚙️',600,480,200,60,html);
+}
+
+function settingsTab(el,wid,tab){
+  document.querySelectorAll('.settings-nav-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  const content=document.getElementById(wid+'-content');
+  if(!content) return;
+  const tabs={
+    system:`<div class="settings-section-title">Sistem Ayarları</div><div class="settings-section-sub">Performans ve sistem davranışı</div>
+      <div class="settings-row"><div><div class="settings-row-label">Otomatik Güncelleme</div><div class="settings-row-sub">Güncellemeleri otomatik yükle</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="settings-row"><div><div class="settings-row-label">Bildirimler</div><div class="settings-row-sub">Sistem bildirimleri</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="settings-row"><div><div class="settings-row-label">Ses Efektleri</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>`,
+    network:`<div class="settings-section-title">Ağ Ayarları</div><div class="settings-section-sub">WiFi, Ethernet ve VPN</div>
+      <div class="settings-row"><div><div class="settings-row-label">WiFi</div><div class="settings-row-sub" style="color:var(--green)">✓ TuncerNet_5G bağlı</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="settings-row"><div><div class="settings-row-label">Bluetooth</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+      <div class="settings-row"><div><div class="settings-row-label">Uçak Modu</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>`,
+    security:`<div class="settings-section-title">Güvenlik</div><div class="settings-section-sub">Şifre ve gizlilik ayarları</div>
+      <div class="settings-row"><div><div class="settings-row-label">Güvenlik Duvarı</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="settings-row"><div><div class="settings-row-label">Disk Şifreleme</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>`,
+    about:`<div class="settings-section-title">Tuncer OS Hakkında</div><div class="settings-section-sub">Sistem bilgileri</div>
+      <div class="settings-row"><div class="settings-row-label">Sürüm</div><div style="font-size:12px;color:var(--accent)">Tuncer OS 1.0.0</div></div>
+      <div class="settings-row"><div class="settings-row-label">Kernel</div><div style="font-size:12px;color:var(--text2)">5.15.0-tuncer</div></div>
+      <div class="settings-row"><div class="settings-row-label">Mimari</div><div style="font-size:12px;color:var(--text2)">x86_64</div></div>
+      <div class="settings-row"><div class="settings-row-label">Kullanıcı</div><div style="font-size:12px;color:var(--text2)">tuncer (root)</div></div>
+      <div class="settings-row"><div class="settings-row-label">Yapı Tarihi</div><div style="font-size:12px;color:var(--text2)">2025-01-01</div></div>`
+  };
+  content.innerHTML=tabs[tab]||content.innerHTML;
+}
+
+function setWallpaper(bg,el){
+  document.getElementById('wallpaper').style.background=bg;
+  document.querySelectorAll('.wp-option').forEach(w=>w.classList.remove('active'));
+  if(el) el.classList.add('active');
+  notify('Görünüm','Duvar kağıdı değiştirildi','success','🎨');
+}
+
+function setAccent(color,el){
+  document.documentElement.style.setProperty('--accent',color);
+  document.querySelectorAll('.accent-option').forEach(a=>a.classList.remove('active'));
+  if(el) el.classList.add('active');
+  notify('Görünüm','Vurgu rengi değiştirildi','success','🎨');
+}
+
+// ======== NOTIFICATIONS ========
+function notify(title, msg, type='info', icon='ℹ️'){
+  const c=document.getElementById('notifs');
+  const n=document.createElement('div');
+  n.className=`notif ${type}`;
+  n.innerHTML=`<div class="notif-icon">${icon}</div><div><div class="notif-title">${title}</div><div class="notif-msg">${msg}</div></div>`;
+  n.onclick=()=>n.remove();
+  c.appendChild(n);
+  setTimeout(()=>{ n.style.transition='all 0.3s'; n.style.opacity='0'; n.style.transform='translateX(100%)'; setTimeout(()=>n.remove(),300); }, 4000);
+}
+
+// ======== CONTEXT MENU ========
+function showCtxMenu(e, items){
+  const menu=document.getElementById('ctx-menu');
+  menu.innerHTML='';
+  items.forEach(item=>{
+    if(item.sep){ const s=document.createElement('div'); s.className='ctx-sep'; menu.appendChild(s); return; }
+    const d=document.createElement('div');
+    d.className='ctx-item'+(item.danger?' danger':'');
+    d.textContent=item.label;
+    d.onclick=()=>{ item.action(); hideCtxMenu(); };
+    menu.appendChild(d);
+  });
+  menu.style.left=Math.min(e.clientX,window.innerWidth-200)+'px';
+  menu.style.top=Math.min(e.clientY,window.innerHeight-200)+'px';
+  menu.classList.add('show');
+  e.preventDefault();
+}
+
+function hideCtxMenu(){ document.getElementById('ctx-menu').classList.remove('show'); }
+document.addEventListener('click', hideCtxMenu);
+document.addEventListener('contextmenu', e=>{
+  if(e.target.id==='desktop'||e.target.classList.contains('wallpaper')||e.target.id==='desktop-icons') {
+    showCtxMenu(e,[
+      {label:'📂 Dosya Gezgini', action:()=>openApp('explorer')},
+      {label:'📝 Yeni Metin Dosyası', action:()=>{ createFile('C:\\Users\\Tuncer\\Desktop','Yeni Dosya.txt',''); notify('Oluşturuldu','Dosya oluşturuldu','success','📄'); renderDesktop(); }},
+      {label:'📁 Yeni Klasör', action:()=>{ const n=prompt('Klasör adı:','Yeni Klasör'); if(n){ createDir('C:\\Users\\Tuncer\\Desktop',n); notify('Oluşturuldu','Klasör oluşturuldu','success','📁'); renderDesktop(); } }},
+      {sep:true},
+      {label:'⚙️ Görüntü Ayarları', action:()=>openApp('settings')},
+      {label:'📊 Sistem Monitörü', action:()=>openApp('sysmon')},
+      {sep:true},
+      {label:'↺ Yenile', action:()=>renderDesktop()},
+    ]);
+  }
+});
+
+// ======== START MENU ========
+function toggleStart(){
+  const m=document.getElementById('start-menu');
+  m.classList.toggle('show');
+  if(m.classList.contains('show')) document.getElementById('sm-search')?.focus();
+}
+function closeStart(){ document.getElementById('start-menu').classList.remove('show'); }
+
+function buildStartMenu(){
+  const grid=document.getElementById('sm-apps');
+  grid.innerHTML='';
+  APPS.forEach(app=>{
+    const item=document.createElement('div');
+    item.className='sm-app';
+    item.dataset.name=app.name.toLowerCase();
+    item.innerHTML=`<span class="sm-app-icon">${app.icon}</span><span class="sm-app-name">${app.name}</span>`;
+    item.onclick=()=>{ openApp(app.id); closeStart(); };
+    grid.appendChild(item);
+  });
+}
+
+function filterApps(q){
+  document.querySelectorAll('.sm-app').forEach(a=>{
+    a.style.display=a.dataset.name.includes(q.toLowerCase())?'':'none';
+  });
+}
+
+// ======== DESKTOP ICONS ========
+const desktopAppsList = [
+  {id:'explorer',label:'Dosya\nGezgini',icon:'📂'},
+  {id:'notepad',label:'Notepad',icon:'📝'},
+  {id:'terminal',label:'Terminal',icon:'⬛'},
+  {id:'browser',label:'Tarayıcı',icon:'🌐'},
+  {id:'calc',label:'Hesap\nMakinesi',icon:'🔢'},
+  {id:'paint',label:'Paint',icon:'🎨'},
+  {id:'music',label:'Müzik',icon:'🎵'},
+  {id:'sysmon',label:'Monitör',icon:'📊'},
+  {id:'store',label:'Mağaza',icon:'🏪'},
+  {id:'settings',label:'Ayarlar',icon:'⚙️'},
+];
+
+function renderDesktop(){
+  const container=document.getElementById('desktop-icons');
+  container.innerHTML='';
+  desktopAppsList.forEach(app=>{
+    const el=document.createElement('div');
+    el.className='d-icon';
+    el.innerHTML=`<div class="d-icon-img">${app.icon}</div><div class="d-icon-label">${app.label}</div>`;
+    el.ondblclick=()=>openApp(app.id);
+    el.onclick=()=>{ document.querySelectorAll('.d-icon').forEach(d=>d.classList.remove('selected')); el.classList.add('selected'); };
+    container.appendChild(el);
+  });
+
+  const desktopFiles=listDir('C:\\Users\\Tuncer\\Desktop');
+  desktopFiles.forEach(f=>{
+    const el=document.createElement('div');
+    el.className='d-icon';
+    el.innerHTML=`<div class="d-icon-img">${getFileIcon(f.name,f.type)}</div><div class="d-icon-label">${f.name}</div>`;
+    el.ondblclick=()=>{ if(f.type==='file') openNotepad({path:'C:\\Users\\Tuncer\\Desktop',name:f.name}); else openExplorer('C:\\Users\\Tuncer\\Desktop'); };
+    container.appendChild(el);
+  });
+}
+
+// ======== CLOCK ========
+function updateClock(){
+  const now=new Date();
+  const t=now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const d=now.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit'});
+  const el=document.getElementById('clock');
+  if(el) el.textContent=t+' · '+d;
+}
+
+// ======== BOOT SEQUENCE ========
+const bootMessages=[
+  'BIOS başlatılıyor...',
+  'Disk bölümleri kontrol ediliyor...',
+  'Kernel 5.15 yükleniyor...',
+  'Aygıt sürücüleri başlatılıyor...',
+  'Ağ bağlantısı kuruluyor...',
+  'Kullanıcı arayüzü yükleniyor...',
+  'Hazır!',
+];
+
+async function boot(){
+  const progress=document.getElementById('boot-progress');
+  const status=document.getElementById('boot-status');
+  for(let i=0;i<bootMessages.length;i++){
+    await new Promise(r=>setTimeout(r,350));
+    progress.style.width=((i+1)/bootMessages.length*100)+'%';
+    status.textContent=bootMessages[i];
+  }
+  await new Promise(r=>setTimeout(r,500));
+  document.getElementById('boot').classList.add('hide');
+  setTimeout(()=>{
+    document.getElementById('login').classList.add('show');
+    document.getElementById('login-input').focus();
+  },800);
+}
+
+function doLogin(){
+  const val=document.getElementById('login-input').value;
+  if(val===''||val==='tuncer'){
+    document.getElementById('login').style.opacity='0';
+    document.getElementById('login').style.pointerEvents='none';
+    setTimeout(showDesktop,600);
+  } else {
+    const input=document.getElementById('login-input');
+    input.style.borderColor='var(--red)';
+    input.style.animation='none';
+    setTimeout(()=>input.style.animation='',100);
+    notify('Hata','Hatalı şifre! Boş bırakın veya "tuncer" girin','error','❌');
+  }
+}
+
+document.getElementById('login-input').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+
+function showDesktop(){
+  document.getElementById('desktop').style.display='block';
+  document.getElementById('taskbar').style.display='flex';
+  renderDesktop();
+  buildStartMenu();
+  updateClock();
+  setInterval(updateClock,1000);
+  setTimeout(()=>{
+    notify('Tuncer OS','Hoş geldiniz! Sistem hazır. 🚀','success','🖥️');
+  },800);
+}
+
+function lockScreen(){
+  document.getElementById('login').style.opacity='1';
+  document.getElementById('login').style.pointerEvents='all';
+  document.getElementById('login-input').value='';
+  closeStart();
+  notify('Sistem','Ekran kilitlendi','info','🔒');
+}
+
+function shutdownOS(){
+  if(confirm('Tuncer OS kapatılsın mı?')){
+    document.body.style.transition='all 0.8s';
+    document.body.style.opacity='0';
+    setTimeout(()=>{ document.body.innerHTML='<div style="position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;font-family:Oxanium,sans-serif;color:#1a1a2e;font-size:24px;letter-spacing:4px">TUNCER OS</div>'; },800);
+  }
+}
+
+document.getElementById('start-menu').addEventListener('click',e=>e.stopPropagation());
+document.addEventListener('click',e=>{ if(!e.target.closest('#start-menu')&&!e.target.closest('#start-btn')) closeStart(); });
+
+// START
+boot();
+</script>
+</body>
+</html>
